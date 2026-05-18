@@ -66,23 +66,6 @@ jobs:
             gdk-pixbuf2.0-bin \
             fuse libfuse2 file
 
-      - name: Install linuxdeploy (Linux, optional GTK plugin)
-        if: matrix.target == 'linux'
-        shell: bash
-        run: |
-          set -e
-          curl -fsSL -o /tmp/linuxdeploy \
-            "https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20251107-1/linuxdeploy-x86_64.AppImage"
-          chmod +x /tmp/linuxdeploy
-          sudo mv /tmp/linuxdeploy /usr/local/bin/linuxdeploy
-          if curl -fsSL -o /tmp/linuxdeploy-plugin-gtk \
-            "https://github.com/linuxdeploy/linuxdeploy-plugin-gtk/releases/download/continuous/linuxdeploy-plugin-gtk-x86_64.AppImage"; then
-            chmod +x /tmp/linuxdeploy-plugin-gtk
-            sudo mv /tmp/linuxdeploy-plugin-gtk /usr/local/bin/linuxdeploy-plugin-gtk
-          else
-            echo "linuxdeploy-plugin-gtk unavailable — using manual WebKit/GTK bundle only."
-          fi
-
       - name: Install appimagetool (Linux)
         if: matrix.target == 'linux'
         shell: bash

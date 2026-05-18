@@ -25,7 +25,6 @@ import tempfile
 import threading
 import uuid
 
-from dlpulse_next import __version__
 from dlpulse_next.cast_http import (
     get_cast_server_port,
     guess_mime_for_cast,

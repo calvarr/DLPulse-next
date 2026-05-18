@@ -62,20 +62,21 @@ done
 [ -n "$_gir" ] && export GI_TYPELIB_PATH="$_gir"
 export LD_LIBRARY_PATH="/usr/lib:/usr/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
-# GStreamer: only system plugin dirs (never PyInstaller _internal / lib-dynload).
+# GStreamer: system plugins only (rthook reorders LD_LIBRARY_PATH after PyInstaller starts).
 _gst=""
 for _p in /usr/lib/gstreamer-1.0 /usr/lib64/gstreamer-1.0 /usr/lib/x86_64-linux-gnu/gstreamer-1.0; do
   [ -d "$_p" ] && _gst="${_gst:+"$_gst:"}$_p"
 done
-if [ -n "$_gst" ]; then
-  export GST_PLUGIN_PATH="$_gst"
-  export GST_PLUGIN_SYSTEM_PATH="$_gst"
-fi
+[ -n "$_gst" ] && export GST_PLUGIN_SYSTEM_PATH="$_gst"
+unset GST_PLUGIN_PATH 2>/dev/null || true
 for _scan in /usr/libexec/gstreamer-1.0/gst-plugin-scanner /usr/lib/gstreamer-1.0/gst-plugin-scanner; do
   [ -x "$_scan" ] && export GST_PLUGIN_SCANNER="$_scan" && break
 done
 _gst_cache="${XDG_CACHE_HOME:-$HOME/.cache}/dlpulse-next"
-mkdir -p "$_gst_cache" 2>/dev/null && export GST_REGISTRY="$_gst_cache/gstreamer-registry.bin"
+if mkdir -p "$_gst_cache" 2>/dev/null; then
+  rm -f "$_gst_cache/gstreamer-registry.bin"
+  export GST_REGISTRY="$_gst_cache/gstreamer-registry.bin"
+fi
 
 exec "$BIN" "$@"
 EOS

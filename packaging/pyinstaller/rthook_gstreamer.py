@@ -1,5 +1,29 @@
-# WebKit media uses GStreamer. PyInstaller's _internal must not be scanned as a plugin dir.
+# WebKit media uses GStreamer. PyInstaller's _internal must not be scanned as plugins.
+# Runs after PyInstaller sets LD_LIBRARY_PATH — reorder so host GLib/GStreamer win.
 import os
+
+_MEIPASS = os.environ.get("_MEIPASS", "")
+
+
+def _reorder_ld_library_path() -> None:
+    if not _MEIPASS:
+        return
+    sys_paths = ["/usr/lib", "/usr/lib64"]
+    parts = [p for p in os.environ.get("LD_LIBRARY_PATH", "").split(os.pathsep) if p]
+    other: list[str] = []
+    seen = set(sys_paths)
+    for p in parts:
+        if p == _MEIPASS or p.endswith("/_internal"):
+            continue
+        if p in seen:
+            continue
+        other.append(p)
+        seen.add(p)
+    ordered = sys_paths + other + [_MEIPASS]
+    os.environ["LD_LIBRARY_PATH"] = os.pathsep.join(ordered)
+
+
+_reorder_ld_library_path()
 
 _gst_dirs: list[str] = []
 for _p in (
@@ -12,8 +36,8 @@ for _p in (
 
 if _gst_dirs:
     _joined = os.pathsep.join(_gst_dirs)
-    os.environ["GST_PLUGIN_PATH"] = _joined
     os.environ["GST_PLUGIN_SYSTEM_PATH"] = _joined
+    os.environ.pop("GST_PLUGIN_PATH", None)
 
 for _scanner in (
     "/usr/libexec/gstreamer-1.0/gst-plugin-scanner",
@@ -29,6 +53,9 @@ _cache = os.path.join(
 )
 try:
     os.makedirs(_cache, exist_ok=True)
-    os.environ["GST_REGISTRY"] = os.path.join(_cache, "gstreamer-registry.bin")
+    _registry = os.path.join(_cache, "gstreamer-registry.bin")
+    if os.path.isfile(_registry):
+        os.remove(_registry)
+    os.environ["GST_REGISTRY"] = _registry
 except OSError:
     pass

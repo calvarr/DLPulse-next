@@ -51,21 +51,16 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Linux — GTK / WebKit / PyGObject (build + bundle)
+      - name: Linux — GTK / WebKit (PyInstaller build only)
         if: matrix.target == 'linux'
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends \
-            build-essential python3-dev meson ninja-build pkg-config \
+            build-essential python3-dev pkg-config \
             libgtk-3-0 libgtk-3-dev \
             libwebkit2gtk-4.0-37 libwebkit2gtk-4.0-dev \
-            gir1.2-webkit2-4.0 gir1.2-gtk-3.0 gir1.2-cairo-1.0 gir1.2-pango-1.0 \
-            gir1.2-gdkpixbuf-2.0 gir1.2-atk gir1.2-harfbuzz-0.0 gir1.2-rsvg-2.0 \
+            gir1.2-webkit2-4.0 gir1.2-gtk-3.0 \
             libgirepository1.0-dev gobject-introspection \
-            libglib2.0-dev libcairo2-dev libpango1.0-dev \
-            libgdk-pixbuf2.0-dev libharfbuzz-dev \
-            gdk-pixbuf2.0-bin \
-            fonts-dejavu-core \
             fuse libfuse2 file
 
       - name: Install appimagetool (Linux)
@@ -260,7 +255,7 @@ jobs:
             | Windows | `DLPulseNext-Setup.exe` |
             | macOS | `DLPulseNext.dmg` |
 
-            **Linux:** AppImage bundles WebKitGTK/GTK for the native window (no extra packages on most distros).
+            **Linux:** install **WebKit2GTK + GTK3** on your system for the native window (see README). AppImage bundles yt-dlp, ffmpeg, and aria2c only.
 
             For a **stable** versioned release, push a tag `v*` (e.g. `v2.0.1`).
           prerelease: true

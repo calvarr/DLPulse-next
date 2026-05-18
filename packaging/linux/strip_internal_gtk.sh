@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Remove GTK/GLib libs PyInstaller may collect — AppImage uses usr/lib/x86_64-linux-gnu instead.
+# Remove GTK/WebKit libs PyInstaller may collect — runtime uses system packages.
 set -euo pipefail
 
 INTERNAL="${1:?Usage: strip_internal_gtk.sh path/to/_internal}"
@@ -26,10 +26,20 @@ STRIP=(
   libharfbuzz.so.0
   libfribidi.so.0
   libepoxy.so.0
+  libwebkit2gtk-4.0.so.37
+  libwebkit2gtk-4.1.so.0
+  libjavascriptcoregtk-4.0.so.18
+  libjavascriptcoregtk-4.1.so.0
   libstdc++.so.6
   libgcc_s.so.1
 )
 
 for lib in "${STRIP[@]}"; do
   rm -f "$INTERNAL/$lib"
+done
+
+# Versioned sonames (e.g. libwebkit2gtk-4.1.so.0.24.3)
+shopt -s nullglob
+for _so in "$INTERNAL"/libwebkit2gtk-*.so* "$INTERNAL"/libjavascriptcoregtk-*.so*; do
+  rm -f "$_so"
 done

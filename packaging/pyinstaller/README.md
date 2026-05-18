@@ -4,7 +4,7 @@ After PyInstaller produces `dist/DLPulseNext/`:
 
 | Platform | Script | Output |
 |----------|--------|--------|
-| Linux | `packaging/linux/make_appimage.sh` | `build/DLPulseNext-x86_64.AppImage` (WebKitGTK/GTK bundled) |
+| Linux | `packaging/linux/make_appimage.sh` | `build/DLPulseNext-x86_64.AppImage` (requires system WebKitGTK) |
 | Windows | `packaging/windows/build_installer.ps1` | `build/DLPulseNext-Setup.exe` (needs [NSIS](https://nsis.sourceforge.io/)) |
 | macOS | `packaging/macos/make_dmg.sh` | `build/DLPulseNext.dmg` |
 

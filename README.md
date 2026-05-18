@@ -13,29 +13,38 @@ Download the latest builds from **[GitHub Releases](https://github.com/calvarr/D
 | **Continuous** (latest `main`) | [dlpulse-next-continuous](https://github.com/calvarr/DLPulse-next/releases/tag/dlpulse-next-continuous) | Bleeding edge; app header shows Git commit |
 | **Stable** (tagged) | [All releases](https://github.com/calvarr/DLPulse-next/releases) | Versioned builds (`v2.0.0`, …); header shows release tag |
 
-Each bundle includes **yt-dlp**, **ffmpeg**, **aria2c**, **WebKitGTK/GTK** (Linux AppImage), and the full UI.
+Each bundle includes **yt-dlp**, **ffmpeg**, **aria2c**, and the full UI. On **Linux**, the native window also requires **system GTK3 + WebKit2GTK** (see below).
 
 ### Linux — AppImage
 
-1. Download **`DLPulseNext-x86_64.AppImage`** from the [continuous release](https://github.com/calvarr/DLPulse-next/releases/tag/dlpulse-next-continuous) (or a stable tag).
-2. Make it executable and run:
+1. **Install WebKitGTK and GTK3** (required for the native window):
+
+```bash
+# Arch / Manjaro
+sudo pacman -S gtk3 webkit2gtk gobject-introspection-runtime
+
+# Debian / Ubuntu (22.04 — WebKit 4.0)
+sudo apt install libgtk-3-0 libwebkit2gtk-4.0-37 gir1.2-webkit2-4.0 gobject-introspection
+
+# Debian / Ubuntu (24.04+ — WebKit 4.1)
+sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0 gir1.2-webkit2-4.1 gobject-introspection
+
+# Fedora
+sudo dnf install gtk3 webkit2gtk4.1
+
+# openSUSE
+sudo zypper install gtk3 webkit2gtk3
+```
+
+2. Download **`DLPulseNext-x86_64.AppImage`** from the [continuous release](https://github.com/calvarr/DLPulse-next/releases/tag/dlpulse-next-continuous) (or a stable tag).
+3. Make it executable and run:
 
 ```bash
 chmod +x DLPulseNext-x86_64.AppImage
 ./DLPulseNext-x86_64.AppImage
 ```
 
-**Native window:** WebKitGTK and GTK3 are **bundled inside the AppImage** — no separate install needed on most distros. If the native window still fails, the app opens in your default browser.
-
-For **development from source**, install WebKitGTK on your system:
-
-```bash
-# Arch / Manjaro
-sudo pacman -S gtk3 webkit2gtk gobject-introspection-runtime
-
-# Debian / Ubuntu
-sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0 gir1.2-webkit2-4.1
-```
+**Native window:** uses your system's WebKitGTK/GTK — not bundled in the AppImage. If WebKit is missing or incompatible, the app falls back to your default browser.
 
 Optional: integrate with your desktop (AppImageLauncher, or move the file to `~/Applications` / `/opt` and add a `.desktop` entry).
 

@@ -80,10 +80,14 @@ if [[ -d "$WEBKIT_SRC" ]]; then
   done
 fi
 
-# Pull deps for libwebkit2gtk / libjavascriptcore if present on the build host.
+# Pull deps for WebKit/GI stack if present on the build host.
 for seed in \
   /usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.0.so.* \
-  /usr/lib/x86_64-linux-gnu/libjavascriptcoregtk-4.0.so.*
+  /usr/lib/x86_64-linux-gnu/libjavascriptcoregtk-4.0.so.* \
+  /usr/lib/x86_64-linux-gnu/libgirepository-1.0.so.* \
+  /usr/lib/x86_64-linux-gnu/libgtk-3.so.* \
+  /usr/lib/x86_64-linux-gnu/libgdk-3.so.* \
+  /usr/lib/x86_64-linux-gnu/libsoup-2.4.so.*
 do
   [[ -f "$seed" ]] || continue
   copy_lib "$seed"

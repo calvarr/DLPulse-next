@@ -31,6 +31,12 @@ NEVER_BUNDLE=(
   libnsl.so.1
   libstdc++.so.6
   libgcc_s.so.1
+  libEGL.so.1
+  libGL.so.1
+  libGLX.so.0
+  libGLdispatch.so.0
+  libgbm.so.1
+  libdrm.so.2
 )
 
 is_blocked() {
@@ -39,7 +45,43 @@ is_blocked() {
   for blocked in "${NEVER_BUNDLE[@]}"; do
     [[ "$base" == "$blocked" || "$base" == "$blocked."* ]] && return 0
   done
+  # Host display/GPU stack must not be overridden by Ubuntu build libs.
+  case "$base" in
+    libEGL.so.*|libGL.so.*|libGLX.so.*|libGLdispatch.so.*|libGLESv2.so.*|libgbm.so.*|libdrm.so.* \
+    |libX11.so.*|libX11-xcb.so.*|libXau.so.*|libXdmcp.so.*|libXext.so.*|libXfixes.so.* \
+    |libXrandr.so.*|libXcursor.so.*|libXdamage.so.*|libXcomposite.so.*|libXinerama.so.* \
+    |libXi.so.*|libXrender.so.*|libxcb.so.*|libxcb-*.so.* \
+    |libwayland-client.so.*|libwayland-server.so.*|libwayland-cursor.so.*|libwayland-egl.so.*)
+      return 0
+      ;;
+  esac
   return 1
+}
+
+# WebKit hardcodes /usr/lib/x86_64-linux-gnu/webkit2gtk-4.0 (Ubuntu). Arch has no such path;
+# repoint to /tmp/dlpulse-wk/ (same length, null-padded) and symlink at runtime in AppRun.
+patch_webkit_paths() {
+  local file="$1"
+  [[ -f "$file" ]] || return 0
+  python3 - "$file" <<'PY'
+import sys
+path = sys.argv[1]
+with open(path, "rb") as f:
+    data = f.read()
+old_lib = b"/usr/lib/x86_64-linux-gnu/webkit2gtk-4.0"
+new_lib = b"/tmp/dlpulse-wk/webkit2gtk-4.0".ljust(len(old_lib), b"\0")
+old_inj = b"/usr/lib/x86_64-linux-gnu/webkit2gtk-4.0/injected-bundle/"
+new_inj = b"/tmp/dlpulse-wk/webkit2gtk-4.0/injected-bundle/".ljust(len(old_inj), b"\0")
+orig = data
+if old_inj in data:
+    data = data.replace(old_inj, new_inj)
+if old_lib in data:
+    data = data.replace(old_lib, new_lib)
+if data != orig:
+    with open(path, "wb") as f:
+        f.write(data)
+    print(f"bundle_gtk_webkit: patched WebKit paths in {path}")
+PY
 }
 
 copy_lib() {
@@ -153,5 +195,19 @@ mkdir -p "$APPDIR/usr/share/fonts"
 if [[ -d /usr/share/fonts/truetype/dejavu ]]; then
   cp -a /usr/share/fonts/truetype/dejavu "$APPDIR/usr/share/fonts/" 2>/dev/null || true
 fi
+
+# Drop GPU/display libs — host Mesa + X11/Wayland must be used at runtime.
+shopt -s nullglob
+for _so in "$ARCH_LIB"/*.so*; do
+  base="$(basename "$_so")"
+  if is_blocked "$base"; then
+    rm -f "$_so"
+  fi
+done
+
+# Repoint hardcoded WebKit helper paths for distros without Ubuntu's layout (Arch, Fedora, etc.).
+for _wk in "$ARCH_LIB"/libwebkit2gtk-4.0.so*; do
+  patch_webkit_paths "$_wk"
+done
 
 echo "bundle_gtk_webkit: done ($(find "$ARCH_LIB" -maxdepth 1 -name '*.so*' 2>/dev/null | wc -l) libraries under usr/lib/x86_64-linux-gnu)"

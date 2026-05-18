@@ -71,8 +71,8 @@ BIN="$HERE/usr/bin/DLPulseNext"
 export PATH="$HERE/usr/bin:${PATH:-}"
 export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-${LANG:-en_US.UTF-8}}"
-# GTK/WebKit stack only — never override host libc/pthread (causes stack smashing).
-export LD_LIBRARY_PATH="$ULIB${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+# Bundled GTK/WebKit; host GPU/EGL/Mesa (bundled Ubuntu GL breaks on Arch/Manjaro).
+export LD_LIBRARY_PATH="$ULIB:/usr/lib:/usr/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export GI_TYPELIB_PATH="$ULIB/girepository-1.0"
 export GSETTINGS_SCHEMA_DIR="$HERE/usr/share/glib-2.0/schemas"
 export XDG_DATA_DIRS="$HERE/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
@@ -83,47 +83,24 @@ fi
 if [ -f "$ULIB/gdk-pixbuf-2.0/loaders.cache" ]; then
   export GDK_PIXBUF_MODULE_FILE="$ULIB/gdk-pixbuf-2.0/loaders.cache"
 fi
-# WebKit/EGL: prefer bundled stack; avoid DMA-BUF issues in sandboxed GPU paths.
 export WEBKIT_DISABLE_DMABUF_RENDERER=1
 export WEBKIT_DISABLE_COMPOSITING_MODE=1
+# Bundled Ubuntu Wayland EGL breaks on X11 (Arch/Manjaro); use host Mesa via X11 backend.
+case "${XDG_SESSION_TYPE:-}" in
+  wayland) ;;
+  *) export GDK_BACKEND=x11 ;;
+esac
+# Optional: DLPULSE_GL_SOFTWARE=1 forces llvmpipe if GPU init still fails.
+if [ "${DLPULSE_GL_SOFTWARE:-}" = 1 ]; then
+  export LIBGL_ALWAYS_SOFTWARE=1
+  export MESA_LOADER_DRIVER_OVERRIDE=llvmpipe
+fi
 
-# WebKit hardcodes /usr/lib/x86_64-linux-gnu/webkit2gtk-4.0 for helper processes.
-WK_SYS="/usr/lib/x86_64-linux-gnu/webkit2gtk-4.0"
+# libwebkit is patched at build time to /tmp/dlpulse-wk/webkit2gtk-4.0 (Ubuntu path missing on Arch).
 WK_BUNDLE="$ULIB/webkit2gtk-4.0"
-if [ -x "$WK_BUNDLE/WebKitWebProcess" ] && [ ! -x "$WK_SYS/WebKitWebProcess" ] && command -v bwrap >/dev/null 2>&1; then
-  BWRAP=(bwrap --unshare-user-try --die-with-parent --share-net)
-  BWRAP+=(--ro-bind "$HERE" "$HERE")
-  BWRAP+=(--proc /proc)
-  BWRAP+=(--dev-bind /dev /dev)
-  BWRAP+=(--bind /tmp /tmp)
-  BWRAP+=(--bind /run /run)
-  [ -d "$HOME" ] && BWRAP+=(--bind "$HOME" "$HOME")
-  [ -d /dev/dri ] && BWRAP+=(--dev-bind /dev/dri /dev/dri)
-  for _d in /lib /lib64; do
-    [ -d "$_d" ] && BWRAP+=(--ro-bind "$_d" "$_d")
-  done
-  # Hide distro WebKit/GI (e.g. Arch 4.1) but expose core runtime + helper path.
-  BWRAP+=(--tmpfs /usr/lib)
-  BWRAP+=(--dir /usr/lib/x86_64-linux-gnu)
-  BWRAP+=(--ro-bind "$WK_BUNDLE" "$WK_SYS")
-  for _lib in \
-    ld-linux-x86-64.so.2 libc.so.6 libm.so.6 libdl.so.2 libpthread.so.0 librt.so.1 \
-    libresolv.so.2 libutil.so.1 libz.so.1 libgcc_s.so.1 libstdc++.so.6 libnsl.so.1
-  do
-    [ -f "/usr/lib/$_lib" ] && BWRAP+=(--ro-bind "/usr/lib/$_lib" "/usr/lib/$_lib")
-  done
-  [ -f /etc/resolv.conf ] && BWRAP+=(--ro-bind /etc/resolv.conf /etc/resolv.conf)
-  [ -d /etc/ssl ] && BWRAP+=(--ro-bind /etc/ssl /etc/ssl)
-  [ -f /etc/localtime ] && BWRAP+=(--ro-bind /etc/localtime /etc/localtime)
-  [ -d /etc/fonts ] && BWRAP+=(--ro-bind /etc/fonts /etc/fonts)
-  [ -d /usr/share/fonts ] && BWRAP+=(--ro-bind /usr/share/fonts /usr/share/fonts)
-  [ -d /usr/share/X11 ] && BWRAP+=(--ro-bind /usr/share/X11 /usr/share/X11)
-  [ -d /usr/share/icons ] && BWRAP+=(--ro-bind /usr/share/icons /usr/share/icons)
-  [ -d /usr/share/glvnd ] && BWRAP+=(--ro-bind /usr/share/glvnd /usr/share/glvnd)
-  [ -d /usr/lib/dri ] && BWRAP+=(--ro-bind /usr/lib/dri /usr/lib/dri)
-  [ -d /usr/lib/glvnd ] && BWRAP+=(--ro-bind /usr/lib/glvnd /usr/lib/glvnd)
-  [ -d /usr/lib64/dri ] && BWRAP+=(--ro-bind /usr/lib64/dri /usr/lib64/dri)
-  exec "${BWRAP[@]}" -- "$BIN" "$@"
+if [ -d "$WK_BUNDLE" ]; then
+  mkdir -p /tmp/dlpulse-wk
+  ln -sfn "$WK_BUNDLE" /tmp/dlpulse-wk/webkit2gtk-4.0
 fi
 
 exec "$BIN" "$@"

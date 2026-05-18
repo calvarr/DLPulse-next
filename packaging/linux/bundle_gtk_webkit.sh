@@ -107,13 +107,22 @@ if [[ -d "$GIR_SRC" ]]; then
   echo "bundle_gtk_webkit: GIR typelibs"
   for gir in \
     GLib-2.0.typelib GObject-2.0.typelib Gio-2.0.typelib \
-    Gdk-3.0.typelib Gtk-3.0.typelib Pango-1.0.typelib \
+    Gdk-3.0.typelib Gtk-3.0.typelib Pango-1.0.typelib PangoCairo-1.0.typelib \
     Cairo-1.0.typelib GdkPixbuf-2.0.typelib \
     JavaScriptCore-4.0.typelib WebKit2-4.0.typelib \
     Soup-2.4.typelib HarfBuzz-0.0.typelib \
-    xlib-2.0.typelib Atk-1.0.typelib
+    xlib-2.0.typelib Atk-1.0.typelib \
+    Fontconfig-2.0.typelib freetype2-2.0.typelib
   do
-    [[ -f "$GIR_SRC/$gir" ]] && install -m 0644 "$GIR_SRC/$gir" "$GIRDIR/$gir"
+    if [[ -f "$GIR_SRC/$gir" ]]; then
+      install -m 0644 "$GIR_SRC/$gir" "$GIRDIR/$gir"
+    else
+      echo "bundle_gtk_webkit: WARN missing typelib $gir on build host" >&2
+    fi
+  done
+  # Extra typelibs pulled in by Gtk/WebKit (best-effort).
+  for gir in "$GIR_SRC"/{DBus,PolkitAgent,Secret,Xft,XI,Xext,Xrandr,Xcursor,Xfixes,Xcomposite,Xdamage,Xinerama,Rsvg,libsecret}-*.typelib; do
+    [[ -f "$gir" ]] && install -m 0644 "$gir" "$GIRDIR/$(basename "$gir")"
   done
 fi
 

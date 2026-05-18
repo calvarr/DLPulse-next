@@ -71,18 +71,31 @@ WK_BUNDLE="$ULIB/webkit2gtk-4.0"
 if [ -x "$WK_BUNDLE/WebKitWebProcess" ] && [ ! -x "$WK_SYS/WebKitWebProcess" ] && command -v bwrap >/dev/null 2>&1; then
   BWRAP=(bwrap --unshare-user-try --die-with-parent --share-net)
   BWRAP+=(--ro-bind "$HERE" "$HERE")
-  BWRAP+=(--ro-bind "$WK_BUNDLE" "$WK_SYS")
-  for _d in /lib /lib64 /usr/lib /bin; do
+  BWRAP+=(--proc /proc)
+  BWRAP+=(--dev-bind /dev /dev)
+  BWRAP+=(--bind /tmp /tmp)
+  BWRAP+=(--bind /run /run)
+  [ -d "$HOME" ] && BWRAP+=(--bind "$HOME" "$HOME")
+  [ -d /dev/dri ] && BWRAP+=(--dev-bind /dev/dri /dev/dri)
+  for _d in /lib /lib64; do
     [ -d "$_d" ] && BWRAP+=(--ro-bind "$_d" "$_d")
   done
-  for _d in /tmp /dev /proc /sys /run; do
-    [ -d "$_d" ] && BWRAP+=(--bind "$_d" "$_d")
+  # Hide distro WebKit/GI (e.g. Arch 4.1) but expose core runtime + helper path.
+  BWRAP+=(--tmpfs /usr/lib)
+  BWRAP+=(--dir /usr/lib/x86_64-linux-gnu)
+  BWRAP+=(--ro-bind "$WK_BUNDLE" "$WK_SYS")
+  for _lib in \
+    ld-linux-x86-64.so.2 libc.so.6 libm.so.6 libdl.so.2 libpthread.so.0 librt.so.1 \
+    libresolv.so.2 libutil.so.1 libz.so.1 libgcc_s.so.1 libstdc++.so.6 libnsl.so.1
+  do
+    [ -f "/usr/lib/$_lib" ] && BWRAP+=(--ro-bind "/usr/lib/$_lib" "/usr/lib/$_lib")
   done
-  [ -d "$HOME" ] && BWRAP+=(--bind "$HOME" "$HOME")
   [ -f /etc/resolv.conf ] && BWRAP+=(--ro-bind /etc/resolv.conf /etc/resolv.conf)
   [ -d /etc/ssl ] && BWRAP+=(--ro-bind /etc/ssl /etc/ssl)
   [ -f /etc/localtime ] && BWRAP+=(--ro-bind /etc/localtime /etc/localtime)
   [ -d /usr/share/fonts ] && BWRAP+=(--ro-bind /usr/share/fonts /usr/share/fonts)
+  [ -d /usr/share/X11 ] && BWRAP+=(--ro-bind /usr/share/X11 /usr/share/X11)
+  [ -d /usr/share/icons ] && BWRAP+=(--ro-bind /usr/share/icons /usr/share/icons)
   exec "${BWRAP[@]}" -- "$BIN" "$@"
 fi
 

@@ -53,6 +53,8 @@ BIN="$HERE/usr/bin/DLPulseNext"
 export PATH="$HERE/usr/bin:${PATH:-}"
 export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-${LANG:-en_US.UTF-8}}"
+# WebKitWebProcess needs host GStreamer (sandbox blocks /usr/lib/gstreamer-1.0 otherwise).
+export WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1
 
 # GObject introspection + GLib stack from the host (not bundled).
 _gir=""

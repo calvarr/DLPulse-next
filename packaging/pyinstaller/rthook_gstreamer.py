@@ -53,9 +53,6 @@ _cache = os.path.join(
 )
 try:
     os.makedirs(_cache, exist_ok=True)
-    _registry = os.path.join(_cache, "gstreamer-registry.bin")
-    if os.path.isfile(_registry):
-        os.remove(_registry)
-    os.environ["GST_REGISTRY"] = _registry
+    os.environ["GST_REGISTRY"] = os.path.join(_cache, "gstreamer-registry.bin")
 except OSError:
     pass

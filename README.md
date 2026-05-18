@@ -49,7 +49,7 @@ chmod +x DLPulseNext-x86_64.AppImage
 
 **Native window:** uses your system's WebKitGTK/GTK — not bundled in the AppImage. If WebKit is missing or incompatible, the app falls back to your default browser.
 
-**Video in the built-in player** needs GStreamer plugins (`gst-plugins-base`, `gst-plugins-good` on Arch). Without them you may see `appsink not found` when playing library files.
+**Video in the built-in player** needs GStreamer plugins (`gst-plugins-base`, `gst-plugins-good` on Arch). Without them you may see `autoaudiosink not found` when playing library files. The AppImage disables the WebKit subprocess sandbox so GStreamer can load plugins from `/usr/lib` (required for media; slightly weaker isolation than a browser tab).
 
 Optional: integrate with your desktop (AppImageLauncher, or move the file to `~/Applications` / `/opt` and add a `.desktop` entry).
 

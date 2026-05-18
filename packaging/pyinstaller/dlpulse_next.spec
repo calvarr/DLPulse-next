@@ -41,14 +41,13 @@ if _aria2_staged.is_file():
 
 if sys.platform.startswith("linux"):
     try:
-        for _mod in ("gi",):
-            try:
-                _md, _mb, _mh = collect_all(_mod)
-                _datas += _md
-                _binaries += _mb
-                _hidden += _mh
-            except Exception:
-                pass
+        import gi as _gi_pkg
+        from pathlib import Path as _Path
+
+        _gi_dir = _Path(_gi_pkg.__file__).parent
+        _datas.append((str(_gi_dir), "gi"))
+        for _so in _gi_dir.glob("_gi*.so"):
+            _binaries.append((str(_so), "gi"))
         _hidden += collect_submodules("gi")
         _hidden += [
             "gi._gi",

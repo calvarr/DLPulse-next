@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Copy GTK3, WebKit2GTK, GIR typelibs, and helper binaries into an AppDir.
-# Run on the build host (Ubuntu 22.04 CI) after PyInstaller, before appimagetool/linuxdeploy.
+# Copy WebKit2GTK helpers, GTK/WebKit shared libs, GIR typelibs into an AppDir.
+# Must NOT bundle libc/libpthread/libstdc++ — LD_LIBRARY_PATH would break the loader.
 set -euo pipefail
 
 APPDIR="${1:?Usage: bundle_gtk_webkit.sh AppDir}"
@@ -11,20 +11,48 @@ if [[ ! -d "$APPDIR" ]] || [[ ! -x "$EXE" ]]; then
   exit 1
 fi
 
-LIBDIR="$APPDIR/usr/lib"
 ARCH_LIB="$APPDIR/usr/lib/x86_64-linux-gnu"
 GIRDIR="$ARCH_LIB/girepository-1.0"
-mkdir -p "$LIBDIR" "$ARCH_LIB" "$GIRDIR" "$APPDIR/usr/share/glib-2.0/schemas"
+mkdir -p "$ARCH_LIB" "$GIRDIR" "$APPDIR/usr/share/glib-2.0/schemas"
+
+# Never ship core loader/runtime libs — host libc must always win.
+NEVER_BUNDLE=(
+  ld-linux-x86-64.so.2
+  ld-linux.so.2
+  libc.so.6
+  libm.so.6
+  libdl.so.2
+  libpthread.so.0
+  librt.so.1
+  libutil.so.1
+  libresolv.so.2
+  libnss_files.so.2
+  libnss_dns.so.2
+  libnsl.so.1
+  libstdc++.so.6
+  libgcc_s.so.1
+)
+
+is_blocked() {
+  local base="$1"
+  local blocked
+  for blocked in "${NEVER_BUNDLE[@]}"; do
+    [[ "$base" == "$blocked" || "$base" == "$blocked."* ]] && return 0
+  done
+  return 1
+}
 
 copy_lib() {
   local src="$1"
   [[ -f "$src" ]] || return 0
-  local base
+  local base dest
   base="$(basename "$src")"
-  if [[ -f "$ARCH_LIB/$base" ]]; then
+  is_blocked "$base" && return 0
+  dest="$ARCH_LIB/$base"
+  if [[ -f "$dest" ]]; then
     return 0
   fi
-  install -m 0755 "$src" "$ARCH_LIB/$base"
+  install -m 0755 "$src" "$dest"
 }
 
 copy_libs_from_binary() {
@@ -36,13 +64,7 @@ copy_libs_from_binary() {
   done < <(ldd "$bin" 2>/dev/null | awk '/=> \// { print $3 }')
 }
 
-echo "bundle_gtk_webkit: copying shared libraries for $EXE"
-for _pass in 1 2 3; do
-  copy_libs_from_binary "$EXE"
-  while IFS= read -r so; do
-    copy_libs_from_binary "$so"
-  done < <(find "$APPDIR/usr/bin" "$ARCH_LIB" -name '*.so*' -type f 2>/dev/null)
-done
+echo "bundle_gtk_webkit: WebKit/GTK libraries (not from PyInstaller exe — avoids libc dupes)"
 
 # WebKit subprocess helpers (hard-coded paths at WebKit build time).
 WEBKIT_SRC="/usr/lib/x86_64-linux-gnu/webkit2gtk-4.0"
@@ -57,6 +79,23 @@ if [[ -d "$WEBKIT_SRC" ]]; then
     copy_libs_from_binary "$helper"
   done
 fi
+
+# Pull deps for libwebkit2gtk / libjavascriptcore if present on the build host.
+for seed in \
+  /usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.0.so.* \
+  /usr/lib/x86_64-linux-gnu/libjavascriptcoregtk-4.0.so.*
+do
+  [[ -f "$seed" ]] || continue
+  copy_lib "$seed"
+  copy_libs_from_binary "$seed"
+done
+
+# Resolve transitive deps (libs copied above only — never scan PyInstaller exe).
+for _pass in 1 2 3 4; do
+  while IFS= read -r so; do
+    copy_libs_from_binary "$so"
+  done < <(find "$ARCH_LIB" -maxdepth 1 -name '*.so*' -type f 2>/dev/null)
+done
 
 # GObject introspection typelibs required by pywebview GTK backend.
 GIR_SRC="/usr/lib/x86_64-linux-gnu/girepository-1.0"
@@ -94,4 +133,4 @@ if [[ -d "$PIXBUF_SRC" ]] && command -v gdk-pixbuf-query-loaders >/dev/null; the
   sed -i "s|/usr/lib/x86_64-linux-gnu|$ARCH_LIB|g" "$PIXBUF_DST/loaders.cache" || true
 fi
 
-echo "bundle_gtk_webkit: done ($(find "$ARCH_LIB" -name '*.so*' 2>/dev/null | wc -l) libraries under usr/lib/x86_64-linux-gnu)"
+echo "bundle_gtk_webkit: done ($(find "$ARCH_LIB" -maxdepth 1 -name '*.so*' 2>/dev/null | wc -l) libraries under usr/lib/x86_64-linux-gnu)"

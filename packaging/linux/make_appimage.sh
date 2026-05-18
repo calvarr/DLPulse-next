@@ -39,6 +39,14 @@ fi
 
 bash "$SCRIPT_DIR/bundle_gtk_webkit.sh" "$APPDIR" "$APPDIR/usr/bin/DLPulseNext"
 
+GIRDIR="$APPDIR/usr/lib/x86_64-linux-gnu/girepository-1.0"
+for _required in cairo-1.0.typelib Gtk-3.0.typelib WebKit2-4.0.typelib; do
+  if [[ ! -f "$GIRDIR/$_required" ]]; then
+    echo "make_appimage: missing required typelib $_required in AppDir." >&2
+    exit 1
+  fi
+done
+
 # AppRun — set bundled GTK/WebKit env; keep PyInstaller ELF at usr/bin/DLPulseNext.
 # Do not run linuxdeploy here: it replaces the main binary with a wrapper script.
 cat > "$APPDIR/AppRun" <<'EOS'

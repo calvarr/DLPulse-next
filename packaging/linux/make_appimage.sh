@@ -96,6 +96,13 @@ if [ "${DLPULSE_GL_SOFTWARE:-}" = 1 ]; then
   export MESA_LOADER_DRIVER_OVERRIDE=llvmpipe
 fi
 
+# WebKit/GStreamer must not scan PyInstaller's _internal for plugins (Python .so files).
+_gst=""
+for _p in /usr/lib/gstreamer-1.0 /usr/lib64/gstreamer-1.0 /usr/lib/x86_64-linux-gnu/gstreamer-1.0; do
+  [ -d "$_p" ] && _gst="${_gst:+"$_gst:"}$_p"
+done
+[ -n "$_gst" ] && export GST_PLUGIN_PATH="$_gst"
+
 # libwebkit is patched at build time to /tmp/dlpulse-wk/webkit2gtk-4.0 (Ubuntu path missing on Arch).
 WK_BUNDLE="$ULIB/webkit2gtk-4.0"
 if [ -d "$WK_BUNDLE" ]; then

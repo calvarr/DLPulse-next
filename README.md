@@ -20,14 +20,17 @@ Each bundle includes **yt-dlp**, **ffmpeg**, **aria2c**, and the full UI. On **L
 1. **Install WebKitGTK and GTK3** (required for the native window):
 
 ```bash
-# Arch / Manjaro
-sudo pacman -S gtk3 webkit2gtk-4.1 gobject-introspection-runtime
+# Arch / Manjaro (native window + in-app video playback)
+sudo pacman -S gtk3 webkit2gtk-4.1 gobject-introspection-runtime \
+  gstreamer gst-plugins-base gst-plugins-good
 
 # Debian / Ubuntu (22.04 — WebKit 4.0)
-sudo apt install libgtk-3-0 libwebkit2gtk-4.0-37 gir1.2-webkit2-4.0 gobject-introspection
+sudo apt install libgtk-3-0 libwebkit2gtk-4.0-37 gir1.2-webkit2-4.0 gobject-introspection \
+  gstreamer1.0-plugins-base gstreamer1.0-plugins-good
 
 # Debian / Ubuntu (24.04+ — WebKit 4.1)
-sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0 gir1.2-webkit2-4.1 gobject-introspection
+sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0 gir1.2-webkit2-4.1 gobject-introspection \
+  gstreamer1.0-plugins-base gstreamer1.0-plugins-good
 
 # Fedora
 sudo dnf install gtk3 webkit2gtk4.1
@@ -45,6 +48,8 @@ chmod +x DLPulseNext-x86_64.AppImage
 ```
 
 **Native window:** uses your system's WebKitGTK/GTK — not bundled in the AppImage. If WebKit is missing or incompatible, the app falls back to your default browser.
+
+**Video in the built-in player** needs GStreamer plugins (`gst-plugins-base`, `gst-plugins-good` on Arch). Without them you may see `appsink not found` when playing library files.
 
 Optional: integrate with your desktop (AppImageLauncher, or move the file to `~/Applications` / `/opt` and add a `.desktop` entry).
 

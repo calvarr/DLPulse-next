@@ -62,6 +62,7 @@ if sys.platform.startswith("linux"):
 
 _runtime_hooks = []
 if sys.platform.startswith("linux"):
+    _runtime_hooks.append(str(SPECDIR / "rthook_gstreamer.py"))
     _runtime_hooks.append(str(SPECDIR / "rthook_gtk.py"))
 
 _hidden += collect_submodules("yt_dlp")

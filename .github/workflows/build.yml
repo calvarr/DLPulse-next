@@ -134,11 +134,20 @@ jobs:
         run: pyinstaller packaging/pyinstaller/dlpulse_next.spec
 
       - name: Pack artifact (zip)
+        if: matrix.target != 'windows'
         shell: bash
         run: |
           set -e
           cd dist
           zip -r9 ../DLPulseNext-${{ matrix.target }}.zip DLPulseNext
+
+      - name: Pack artifact (zip, Windows)
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Compress-Archive -Path dist/DLPulseNext -DestinationPath DLPulseNext-windows.zip -Force
+          Get-Item DLPulseNext-windows.zip | Format-List Name, Length
 
       - uses: actions/upload-artifact@v7
         with:

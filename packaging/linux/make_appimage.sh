@@ -54,12 +54,13 @@ export PATH="$HERE/usr/bin:${PATH:-}"
 export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-${LANG:-en_US.UTF-8}}"
 
-# GObject introspection: system typelibs (WebKit 4.1 + Soup 3.0 on Arch, etc.).
+# GObject introspection + GLib stack from the host (not bundled).
 _gir=""
 for _p in /usr/lib/girepository-1.0 /usr/lib64/girepository-1.0; do
   [ -d "$_p" ] && _gir="${_gir:+"$_gir:"}$_p"
 done
 [ -n "$_gir" ] && export GI_TYPELIB_PATH="$_gir"
+export LD_LIBRARY_PATH="/usr/lib:/usr/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 # GStreamer: do not scan PyInstaller's _internal for plugins (Python .so files).
 _gst=""

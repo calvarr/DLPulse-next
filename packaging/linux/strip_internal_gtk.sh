@@ -1,64 +1,36 @@
 #!/usr/bin/env bash
-# Remove libs PyInstaller may collect from Ubuntu CI that shadow the host GLib/GTK stack.
-# System WebKit/GTK/GIO must load /usr/lib/* (e.g. libmount with MOUNT_2_40 on Arch).
+# PyInstaller copies many Ubuntu .so files into _internal/ root. On Arch/Fedora they
+# shadow newer system libs and break GObject introspection (libgio → libmount → libsystemd).
+# Python extensions live in subdirs; keep only libs the frozen runtime truly needs here.
 set -euo pipefail
 
 INTERNAL="${1:?Usage: strip_internal_gtk.sh path/to/_internal}"
 
 [[ -d "$INTERNAL" ]] || exit 0
 
-STRIP=(
-  libglib-2.0.so.0
-  libgobject-2.0.so.0
-  libgio-2.0.so.0
-  libgmodule-2.0.so.0
-  libgirepository-1.0.so.1
-  libgtk-3.so.0
-  libgdk-3.so.0
-  libgdk_pixbuf-2.0.so.0
-  libatk-1.0.so.0
-  libatk-bridge-2.0.so.0
-  libatspi.so.0
-  libpango-1.0.so.0
-  libpangocairo-1.0.so.0
-  libpangoft2-1.0.so.0
-  libcairo.so.2
-  libcairo-gobject.so.2
-  libharfbuzz.so.0
-  libfribidi.so.0
-  libepoxy.so.0
-  libwebkit2gtk-4.0.so.37
-  libwebkit2gtk-4.1.so.0
-  libjavascriptcoregtk-4.0.so.18
-  libjavascriptcoregtk-4.1.so.0
-  libmount.so.1
-  libblkid.so.1
-  libuuid.so.1
-  libselinux.so.1
-  libpcre2-8.so.0
-  libpcre.so.3
-  libsoup-2.4.so.1
-  libsoup-3.0.so.0
-  libstdc++.so.6
-  libgcc_s.so.1
+KEEP_ROOT_LIBS=(
+  libpython3.12.so.1.0
+  libaria2.so.0
 )
 
-for lib in "${STRIP[@]}"; do
-  rm -f "$INTERNAL/$lib"
-done
-
-shopt -s nullglob
-for _pat in \
-  libwebkit2gtk-*.so* \
-  libjavascriptcoregtk-*.so* \
-  libsoup-*.so* \
-  libmount.so* \
-  libblkid.so* \
-  libuuid.so*
-do
-  for _so in "$INTERNAL"/$_pat; do
-    rm -f "$_so"
+should_keep() {
+  local base="$1"
+  local k
+  for k in "${KEEP_ROOT_LIBS[@]}"; do
+    [[ "$base" == "$k" || "$base" == "$k."* ]] && return 0
   done
+  return 1
+}
+
+removed=0
+shopt -s nullglob
+for _so in "$INTERNAL"/lib*.so*; do
+  base="$(basename "$_so")"
+  if should_keep "$base"; then
+    continue
+  fi
+  rm -f "$_so"
+  removed=$((removed + 1))
 done
 
-echo "strip_internal_gtk: removed host-conflicting libs from $(basename "$(dirname "$INTERNAL")")/_internal"
+echo "strip_internal_gtk: removed $removed bundled system libs from _internal (kept libpython + libaria2)"

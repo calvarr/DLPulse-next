@@ -66,18 +66,24 @@ copy_libs_from_binary() {
 
 echo "bundle_gtk_webkit: WebKit/GTK libraries (not from PyInstaller exe — avoids libc dupes)"
 
-# WebKit subprocess helpers (hard-coded paths at WebKit build time).
+# WebKit subprocess tree (helpers, injected-bundle, etc.) — hard-coded under webkit2gtk-4.0.
 WEBKIT_SRC="/usr/lib/x86_64-linux-gnu/webkit2gtk-4.0"
 WEBKIT_DST="$ARCH_LIB/webkit2gtk-4.0"
 if [[ -d "$WEBKIT_SRC" ]]; then
-  echo "bundle_gtk_webkit: WebKit helpers from $WEBKIT_SRC"
+  echo "bundle_gtk_webkit: WebKit tree from $WEBKIT_SRC"
+  rm -rf "$WEBKIT_DST"
   mkdir -p "$WEBKIT_DST"
+  cp -a "$WEBKIT_SRC"/. "$WEBKIT_DST/"
   shopt -s nullglob
-  for helper in "$WEBKIT_SRC"/WebKitWebProcess "$WEBKIT_SRC"/WebKitNetworkProcess; do
-    [[ -x "$helper" ]] || continue
-    install -m 0755 "$helper" "$WEBKIT_DST/$(basename "$helper")"
-    copy_libs_from_binary "$helper"
+  for helper in "$WEBKIT_DST"/WebKitWebProcess "$WEBKIT_DST"/WebKitNetworkProcess \
+    "$WEBKIT_DST"/WebKitGPUProcess "$WEBKIT_DST"/injected-bundle/*.so*; do
+    [[ -e "$helper" ]] || continue
+    [[ -f "$helper" && ! -x "$helper" ]] && copy_lib "$helper"
+    [[ -x "$helper" ]] && copy_libs_from_binary "$helper"
   done
+  if [[ ! -f "$WEBKIT_DST/injected-bundle/libwebkit2gtkinjectedbundle.so" ]]; then
+    echo "bundle_gtk_webkit: WARN missing injected-bundle on build host" >&2
+  fi
 fi
 
 # Pull deps for WebKit/GI stack if present on the build host.
@@ -131,6 +137,21 @@ if [[ -d "$PIXBUF_SRC" ]] && command -v gdk-pixbuf-query-loaders >/dev/null; the
   cp -a "$PIXBUF_SRC"/. "$PIXBUF_DST/"
   gdk-pixbuf-query-loaders > "$PIXBUF_DST/loaders.cache"
   sed -i "s|/usr/lib/x86_64-linux-gnu|$ARCH_LIB|g" "$PIXBUF_DST/loaders.cache" || true
+fi
+
+# Fontconfig (WebKit/GTK text rendering).
+if [[ -d /etc/fonts ]]; then
+  echo "bundle_gtk_webkit: fontconfig"
+  mkdir -p "$APPDIR/etc/fonts"
+  cp -a /etc/fonts/. "$APPDIR/etc/fonts/" 2>/dev/null || true
+  # Rewrite absolute paths in fonts.conf to AppDir-relative where needed.
+  if [[ -f "$APPDIR/etc/fonts/fonts.conf" ]]; then
+    sed -i "s|/usr/share/fonts|$APPDIR/usr/share/fonts|g" "$APPDIR/etc/fonts/fonts.conf" || true
+  fi
+fi
+mkdir -p "$APPDIR/usr/share/fonts"
+if [[ -d /usr/share/fonts/truetype/dejavu ]]; then
+  cp -a /usr/share/fonts/truetype/dejavu "$APPDIR/usr/share/fonts/" 2>/dev/null || true
 fi
 
 echo "bundle_gtk_webkit: done ($(find "$ARCH_LIB" -maxdepth 1 -name '*.so*' 2>/dev/null | wc -l) libraries under usr/lib/x86_64-linux-gnu)"

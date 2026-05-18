@@ -65,6 +65,7 @@ jobs:
             libglib2.0-dev libcairo2-dev libpango1.0-dev \
             libgdk-pixbuf2.0-dev libharfbuzz-dev \
             gdk-pixbuf2.0-bin \
+            fonts-dejavu-core \
             fuse libfuse2 file
 
       - name: Install appimagetool (Linux)

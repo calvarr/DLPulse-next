@@ -13,6 +13,9 @@ on:
       - "v*"
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 concurrency:
   group: build-dlpulse-next-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -38,9 +41,9 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -109,21 +112,19 @@ jobs:
         if: matrix.target == 'windows'
         shell: pwsh
         run: |
-          choco install aria2 -y --no-progress
-          $exe = $null
-          foreach ($p in @(
-            "$env:ProgramData\chocolatey\bin\aria2c.exe",
-            "$env:ChocolateyInstall\bin\aria2c.exe"
-          )) {
-            if ($p -and (Test-Path -LiteralPath $p)) { $exe = $p; break }
-          }
-          if (-not $exe) {
-            $found = Get-ChildItem -Path "$env:ChocolateyInstall\lib\aria2" -Filter aria2c.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($found) { $exe = $found.FullName }
-          }
-          if (-not $exe) { throw "aria2c.exe not found after choco install aria2" }
+          $ErrorActionPreference = 'Stop'
+          $ver = '1.37.0'
+          $zipName = "aria2-$ver-win-64bit-build1.zip"
+          $url = "https://github.com/aria2/aria2/releases/download/release-$ver/$zipName"
+          $dest = Join-Path $env:RUNNER_TEMP 'aria2-win'
+          $zipPath = Join-Path $env:RUNNER_TEMP $zipName
+          if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
+          Invoke-WebRequest -Uri $url -OutFile $zipPath
+          Expand-Archive -LiteralPath $zipPath -DestinationPath $dest -Force
+          $exe = Get-ChildItem -Path $dest -Filter aria2c.exe -Recurse | Select-Object -First 1
+          if (-not $exe) { throw "aria2c.exe not found in $dest" }
           New-Item -ItemType Directory -Force -Path packaging/binaries | Out-Null
-          Copy-Item -LiteralPath $exe -Destination packaging/binaries/aria2c.exe
+          Copy-Item -LiteralPath $exe.FullName -Destination packaging/binaries/aria2c.exe
           & packaging/binaries/aria2c.exe --version
 
       - name: PyInstaller
@@ -139,7 +140,7 @@ jobs:
           cd dist
           zip -r9 ../DLPulseNext-${{ matrix.target }}.zip DLPulseNext
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: DLPulseNext-${{ matrix.target }}.zip
@@ -158,11 +159,11 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
           pattern: dlpulse-next-*

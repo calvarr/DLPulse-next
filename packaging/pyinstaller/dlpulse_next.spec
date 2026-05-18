@@ -26,6 +26,10 @@ _commit = PKG / "build_commit.txt"
 if _commit.is_file():
     _datas.append((str(_commit), "dlpulse_next"))
 
+_version = PKG / "build_version.txt"
+if _version.is_file():
+    _datas.append((str(_version), "dlpulse_next"))
+
 _binaries = list(ff_binaries)
 
 # Optional: aria2c staged under packaging/binaries/ (CI copies platform binary before PyInstaller).

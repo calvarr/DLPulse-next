@@ -6,3 +6,4 @@
 __pycache__/
 *.spec.bak
 dlpulse_next/build_commit.txt
+dlpulse_next/build_version.txt

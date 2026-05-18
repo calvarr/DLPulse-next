@@ -43,6 +43,22 @@ def _app_dir() -> Path:
     return Path(__file__).resolve().parent
 
 
+def get_build_release_tag() -> str | None:
+    """Release tag (e.g. ``v2.0.0``) embedded at CI for versioned builds only."""
+    marker = _app_dir() / "build_version.txt"
+    if marker.is_file():
+        raw = marker.read_text(encoding="utf-8").strip()
+        if raw and "continuous" not in raw.lower():
+            return raw.split()[0]
+    return None
+
+
+def get_installed_release_version() -> str | None:
+    """Semver parsed from baked release tag, or ``None`` for continuous / dev installs."""
+    tag = get_build_release_tag()
+    return _version_from_tag(tag) if tag else None
+
+
 def get_app_package_version() -> str:
     """PEP 621 version of the ``dlpulse-next`` distribution."""
     try:
@@ -236,12 +252,13 @@ def check_app_github_update(timeout: float = 20.0) -> AppGitHubUpdateInfo:
     Prefer a newer tagged GitHub Release (``v*``) over raw commit comparison.
   Users on packaged builds should update via Releases, not git pull.
     """
-    installed = get_app_package_version()
+    installed_tag = get_build_release_tag()
+    installed_ver = get_installed_release_version()
     no_banner = AppGitHubUpdateInfo(
         False,
         "",
         "",
-        installed,
+        installed_tag or get_local_commit_sha() or get_app_package_version(),
         None,
         None,
         GITHUB_RELEASES_URL,
@@ -251,20 +268,40 @@ def check_app_github_update(timeout: float = 20.0) -> AppGitHubUpdateInfo:
     )
 
     release = fetch_latest_github_release(timeout=timeout)
+    latest_ver = None
+    latest_tag = None
     if release:
         tag = str(release.get("tag_name") or "")
         latest_ver = _version_from_tag(tag)
+        latest_tag = tag
         page = str(release.get("html_url") or GITHUB_RELEASES_URL)
-        if latest_ver and is_newer_version(latest_ver, installed):
+        if latest_ver and installed_ver and is_newer_version(latest_ver, installed_ver):
             msg = (
-                f"A new version is available: {tag} (you have v{installed}). "
-                f"Download Linux, Windows, or macOS builds (yt-dlp, ffmpeg, aria2c included) from GitHub Releases."
+                f"A new version is available: {tag} (you have {installed_tag}). "
+                "Download Linux AppImage, Windows installer, or macOS DMG from GitHub Releases."
             )
             return AppGitHubUpdateInfo(
                 True,
                 msg,
                 "release",
-                installed,
+                installed_tag or installed_ver,
+                latest_ver,
+                tag,
+                GITHUB_RELEASES_URL,
+                page,
+                None,
+                tag,
+            )
+        if not installed_ver and tag.startswith("v") and not release.get("prerelease"):
+            msg = (
+                f"Stable release {tag} is available on GitHub Releases "
+                "(AppImage / Windows installer / macOS DMG)."
+            )
+            return AppGitHubUpdateInfo(
+                True,
+                msg,
+                "release",
+                get_local_commit_sha() or "continuous",
                 latest_ver,
                 tag,
                 GITHUB_RELEASES_URL,
@@ -274,8 +311,19 @@ def check_app_github_update(timeout: float = 20.0) -> AppGitHubUpdateInfo:
             )
 
     local = get_local_commit_sha()
-    if not local:
-        return no_banner
+    if not local or installed_tag:
+        return AppGitHubUpdateInfo(
+            False,
+            "",
+            "",
+            installed_tag or local or get_app_package_version(),
+            latest_ver if release else None,
+            str(release.get("tag_name")) if release else None,
+            GITHUB_RELEASES_URL,
+            str(release.get("html_url")) if release else None,
+            local,
+            None,
+        )
 
     main_sha = _branch_head_sha("main", timeout=timeout)
     if not main_sha:
@@ -289,7 +337,7 @@ def check_app_github_update(timeout: float = 20.0) -> AppGitHubUpdateInfo:
         False,
         "",
         "",
-        installed,
+        installed_tag or local or get_app_package_version(),
         latest_ver if release else None,
         str(release.get("tag_name")) if release else None,
         GITHUB_RELEASES_URL,

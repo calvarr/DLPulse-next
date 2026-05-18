@@ -494,16 +494,18 @@ def create_app() -> Flask:
             GITHUB_RELEASES_URL,
             commit_page_url,
             fetch_latest_github_release,
+            get_build_release_tag,
             get_local_commit_sha,
         )
         from dlpulse_next.ytdlp_update import get_installed_ytdlp_version
 
         commit = get_local_commit_sha()
+        release_tag = get_build_release_tag()
         rel = fetch_latest_github_release()
         return jsonify(
             {
                 "ok": True,
-                "version": __version__,
+                "release_tag": release_tag,
                 "commit": commit,
                 "commit_url": commit_page_url(commit) if commit else None,
                 "releases_url": GITHUB_RELEASES_URL,
@@ -1370,12 +1372,15 @@ def create_app() -> Flask:
         if not dismissed and legacy_sha and info.kind == "commit":
             dismissed = legacy_sha == (info.remote_main_sha or "")[:40]
         show = info.show_banner and not dismissed
+        from dlpulse_next.github_update import get_build_release_tag
+
         return jsonify(
             {
                 "ok": True,
                 "show_banner": show,
                 "message": info.message,
                 "kind": info.kind,
+                "release_tag": get_build_release_tag(),
                 "installed_version": info.installed_version,
                 "latest_version": info.latest_version,
                 "latest_tag": info.latest_tag,

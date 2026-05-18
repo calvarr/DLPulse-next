@@ -793,10 +793,7 @@ async function init() {
   initShowAllFilesPreference();
   try {
     const v = await api("/api/version");
-    $("ver-badge").textContent = "v" + v.version;
-    $("ver-badge").title = v.commit
-      ? `Build ${(v.commit || "").slice(0, 7)} — click Settings → Check for updates`
-      : "DLPulse Next";
+    applyBuildBadge(v);
     applyVersionPanel(v);
   } catch (_) {
     $("ver-badge").textContent = "";
@@ -848,18 +845,35 @@ async function loadSettingsUi() {
 
 const DEFAULT_RELEASES_URL = "https://github.com/calvarr/DLPulse-next/releases";
 
+function applyBuildBadge(v) {
+  const badge = $("ver-badge");
+  if (!badge) return;
+  if (v.release_tag) {
+    badge.textContent = v.release_tag.startsWith("v") ? v.release_tag : `v${v.release_tag}`;
+    badge.title = v.commit ? `Build ${v.commit.slice(0, 7)}` : "DLPulse Next release";
+  } else if (v.commit) {
+    badge.textContent = v.commit.slice(0, 7);
+    badge.title = "Continuous build — Settings → Check for updates";
+  } else {
+    badge.textContent = "";
+    badge.title = "";
+  }
+}
+
 function applyVersionPanel(v) {
-  const verEl = $("set-app-version");
-  if (verEl) verEl.textContent = "v" + (v.version || "?");
+  const relRow = $("set-app-release-row");
+  const relEl = $("set-app-release");
+  if (v.release_tag && relRow && relEl) {
+    relRow.hidden = false;
+    relEl.textContent = v.release_tag.startsWith("v") ? v.release_tag : `v${v.release_tag}`;
+  } else if (relRow) {
+    relRow.hidden = true;
+  }
   const buildEl = $("set-app-build");
   if (buildEl) {
-    if (v.commit) {
-      buildEl.hidden = false;
-      buildEl.textContent = `Build commit: ${v.commit.slice(0, 7)}`;
-    } else {
-      buildEl.hidden = true;
-      buildEl.textContent = "";
-    }
+    buildEl.textContent = v.commit
+      ? `Build commit: ${v.commit.slice(0, 7)}`
+      : "Build commit: unknown (dev install)";
   }
   const bundledEl = $("set-app-bundled");
   if (bundledEl && v.bundled) {
@@ -921,9 +935,12 @@ $("btn-check-app-update")?.addEventListener("click", async () => {
     if (g?.show_banner) {
       st.textContent = g.message;
       st.className = "status ok";
-    } else if (g?.latest_tag && g.installed_version) {
-      st.textContent = `You are up to date (v${g.installed_version}; latest release: ${g.latest_tag}).`;
+    } else if (g?.latest_tag && g.release_tag) {
+      st.textContent = `You are up to date (${g.release_tag}; latest release: ${g.latest_tag}).`;
       st.className = "status ok";
+    } else if (g?.latest_tag) {
+      st.textContent = `Continuous build — latest stable release: ${g.latest_tag}.`;
+      st.className = "status";
     } else {
       st.textContent = "No newer release found (or GitHub is unreachable).";
       st.className = "status";

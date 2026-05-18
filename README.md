@@ -55,22 +55,21 @@ Optional **cookies** for yt-dlp: place `cookies.txt` next to the installed `yt_c
 
 ## Desktop bundles (GitHub Actions + PyInstaller)
 
-Pre-built **Linux / Windows / macOS** zips are published on **[GitHub Releases](https://github.com/calvarr/DLPulse-next/releases)**. The in-app **Settings → DLPulse Next** panel shows your version and can check for newer releases.
+Pre-built installers on **[GitHub Releases](https://github.com/calvarr/DLPulse-next/releases)**:
 
-Pushing to `main` / `master` or a tag `v*` runs **`.github/workflows/build.yml`** (PyInstaller: `packaging/pyinstaller/dlpulse_next.spec`).
+| Platform | Format |
+|----------|--------|
+| Linux | **AppImage** (`DLPulseNext-x86_64.AppImage`) |
+| Windows | **Setup.exe** (`DLPulseNext-Setup.exe`) |
+| macOS | **DMG** (`DLPulseNext.dmg`) |
 
-Each bundle includes (no separate install of these tools):
+Each bundle includes **yt-dlp**, **ffmpeg**, **aria2c**, and the full UI — no separate installs.
 
-- **yt-dlp** (full Python package + extractors)
-- **ffmpeg** via **imageio-ffmpeg**
-- **aria2c** (multi-connection downloads)
-- Flask **static** UI, pywebview, Chromecast stack
+**Continuous builds** (push to `main`) show the **Git commit** in the app header. **Version tags** (`v2.0.1`, etc.) bake the tag into the build and display it instead.
 
-**Linux:** WebKitGTK is still required on the **target** machine for the native window ([pywebview GTK](https://pywebview.flowrl.com/guide/installation.html)).
+**Linux:** WebKitGTK still required on the target machine for the native window.
 
-**Release tags:** push `v2.0.0` (etc.) for a stable release; pushes to `main` also refresh prerelease **`dlpulse-next-continuous`**.
-
-Local one-off build: see `packaging/pyinstaller/README.md`.
+Local build scripts: `packaging/linux/make_appimage.sh`, `packaging/windows/build_installer.ps1`, `packaging/macos/make_dmg.sh`.
 
 ## Layout
 

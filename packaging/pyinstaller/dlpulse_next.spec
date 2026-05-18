@@ -60,6 +60,10 @@ if sys.platform.startswith("linux"):
     except Exception:
         pass
 
+_runtime_hooks = []
+if sys.platform.startswith("linux"):
+    _runtime_hooks.append(str(SPECDIR / "rthook_gtk.py"))
+
 _hidden += collect_submodules("yt_dlp")
 _hidden += [
     "yt_dlp",
@@ -104,7 +108,7 @@ a = Analysis(
     hiddenimports=_hidden,
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],
+    runtime_hooks=_runtime_hooks,
     excludes=["tkinter", "matplotlib", "numpy", "pandas", "PIL", "IPython", "pytest"],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,

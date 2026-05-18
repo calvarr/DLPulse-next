@@ -70,7 +70,11 @@ WK_SYS="/usr/lib/x86_64-linux-gnu/webkit2gtk-4.0"
 WK_BUNDLE="$ULIB/webkit2gtk-4.0"
 if [ -x "$WK_BUNDLE/WebKitWebProcess" ] && [ ! -x "$WK_SYS/WebKitWebProcess" ] && command -v bwrap >/dev/null 2>&1; then
   BWRAP=(bwrap --unshare-user-try --die-with-parent --share-net)
+  BWRAP+=(--ro-bind "$HERE" "$HERE")
   BWRAP+=(--ro-bind "$WK_BUNDLE" "$WK_SYS")
+  for _d in /lib /lib64 /usr/lib /bin; do
+    [ -d "$_d" ] && BWRAP+=(--ro-bind "$_d" "$_d")
+  done
   for _d in /tmp /dev /proc /sys /run; do
     [ -d "$_d" ] && BWRAP+=(--bind "$_d" "$_d")
   done

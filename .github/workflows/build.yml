@@ -51,12 +51,32 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Linux — GTK / WebKit for pywebview (import test)
+      - name: Linux — GTK / WebKit / PyGObject (build + bundle)
         if: matrix.target == 'linux'
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends \
-            libgtk-3-0 libwebkit2gtk-4.0-37 gir1.2-webkit2-4.0
+            libgtk-3-0 libgtk-3-dev \
+            libwebkit2gtk-4.0-37 libwebkit2gtk-4.0-dev \
+            gir1.2-webkit2-4.0 gir1.2-gtk-3.0 \
+            libgirepository1.0-dev gobject-introspection \
+            libglib2.0-dev libcairo2-dev libpango1.0-dev \
+            libgdk-pixbuf2.0-dev libharfbuzz-dev \
+            gdk-pixbuf2.0-bin \
+            fuse libfuse2 file
+
+      - name: Install linuxdeploy + GTK plugin (Linux)
+        if: matrix.target == 'linux'
+        shell: bash
+        run: |
+          set -e
+          curl -fsSL -o /tmp/linuxdeploy \
+            "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
+          curl -fsSL -o /tmp/linuxdeploy-plugin-gtk \
+            "https://github.com/linuxdeploy/linuxdeploy-plugin-gtk/releases/download/continuous/linuxdeploy-plugin-gtk-x86_64.AppImage"
+          chmod +x /tmp/linuxdeploy /tmp/linuxdeploy-plugin-gtk
+          sudo mv /tmp/linuxdeploy /usr/local/bin/linuxdeploy
+          sudo mv /tmp/linuxdeploy-plugin-gtk /usr/local/bin/linuxdeploy-plugin-gtk
 
       - name: Install appimagetool (Linux)
         if: matrix.target == 'linux'
@@ -250,7 +270,7 @@ jobs:
             | Windows | `DLPulseNext-Setup.exe` |
             | macOS | `DLPulseNext.dmg` |
 
-            **Linux:** WebKitGTK required on the target machine for the native window.
+            **Linux:** AppImage bundles WebKitGTK/GTK for the native window (no extra packages on most distros).
 
             For a **stable** versioned release, push a tag `v*` (e.g. `v2.0.1`).
           prerelease: true

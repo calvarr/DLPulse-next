@@ -32,12 +32,35 @@ if _version.is_file():
 
 _binaries = list(ff_binaries)
 
+_hidden = list(ff_hidden)
+
 # Optional: aria2c staged under packaging/binaries/ (CI copies platform binary before PyInstaller).
 _aria2_staged = SPECDIR.parent / "binaries" / ("aria2c.exe" if sys.platform == "win32" else "aria2c")
 if _aria2_staged.is_file():
     _binaries.append((str(_aria2_staged), "."))
 
-_hidden = list(ff_hidden)
+if sys.platform.startswith("linux"):
+    try:
+        for _mod in ("gi",):
+            try:
+                _md, _mb, _mh = collect_all(_mod)
+                _datas += _md
+                _binaries += _mb
+                _hidden += _mh
+            except Exception:
+                pass
+        _hidden += collect_submodules("gi")
+        _hidden += [
+            "gi._gi",
+            "gi.repository.WebKit2",
+            "gi.repository.Gtk",
+            "gi.repository.GLib",
+            "gi.repository.Gio",
+            "gi.repository.Gdk",
+        ]
+    except Exception:
+        pass
+
 _hidden += collect_submodules("yt_dlp")
 _hidden += [
     "yt_dlp",

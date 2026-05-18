@@ -21,7 +21,10 @@ dependencies = [
 # Linux: needs system WebKit/GTK (e.g. Arch `webkit2gtk`, `gobject-introspection-runtime`) then pip install.
 webview-gtk = ["PyGObject>=3.42"]
 # PyInstaller desktop bundles (see packaging/pyinstaller/ and .github/workflows).
-build = ["pyinstaller>=6.0"]
+build = [
+    "pyinstaller>=6.0",
+    "PyGObject>=3.42; sys_platform == 'linux'",
+]
 
 [project.scripts]
 dlpulse-next = "dlpulse_next.__main__:main"

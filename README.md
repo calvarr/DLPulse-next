@@ -13,7 +13,7 @@ Download the latest builds from **[GitHub Releases](https://github.com/calvarr/D
 | **Continuous** (latest `main`) | [dlpulse-next-continuous](https://github.com/calvarr/DLPulse-next/releases/tag/dlpulse-next-continuous) | Bleeding edge; app header shows Git commit |
 | **Stable** (tagged) | [All releases](https://github.com/calvarr/DLPulse-next/releases) | Versioned builds (`v2.0.0`, …); header shows release tag |
 
-Each bundle ships **yt-dlp**, **ffmpeg**, **aria2c**, and the full UI — nothing else to install for downloads.
+Each bundle includes **yt-dlp**, **ffmpeg**, **aria2c**, **WebKitGTK/GTK** (Linux AppImage), and the full UI.
 
 ### Linux — AppImage
 
@@ -25,7 +25,9 @@ chmod +x DLPulseNext-x86_64.AppImage
 ./DLPulseNext-x86_64.AppImage
 ```
 
-**Native window:** install **WebKitGTK** on your system (the AppImage does not bundle it):
+**Native window:** WebKitGTK and GTK3 are **bundled inside the AppImage** — no separate install needed on most distros. If the native window still fails, the app opens in your default browser.
+
+For **development from source**, install WebKitGTK on your system:
 
 ```bash
 # Arch / Manjaro
@@ -34,8 +36,6 @@ sudo pacman -S gtk3 webkit2gtk gobject-introspection-runtime
 # Debian / Ubuntu
 sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0 gir1.2-webkit2-4.1
 ```
-
-If WebKitGTK is missing, the app still starts and opens the UI in your default browser.
 
 Optional: integrate with your desktop (AppImageLauncher, or move the file to `~/Applications` / `/opt` and add a `.desktop` entry).
 

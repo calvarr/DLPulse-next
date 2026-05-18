@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Remove GTK/WebKit libs PyInstaller may collect — runtime uses system packages.
+# Remove libs PyInstaller may collect from Ubuntu CI that shadow the host GLib/GTK stack.
+# System WebKit/GTK/GIO must load /usr/lib/* (e.g. libmount with MOUNT_2_40 on Arch).
 set -euo pipefail
 
 INTERNAL="${1:?Usage: strip_internal_gtk.sh path/to/_internal}"
@@ -30,6 +31,14 @@ STRIP=(
   libwebkit2gtk-4.1.so.0
   libjavascriptcoregtk-4.0.so.18
   libjavascriptcoregtk-4.1.so.0
+  libmount.so.1
+  libblkid.so.1
+  libuuid.so.1
+  libselinux.so.1
+  libpcre2-8.so.0
+  libpcre.so.3
+  libsoup-2.4.so.1
+  libsoup-3.0.so.0
   libstdc++.so.6
   libgcc_s.so.1
 )
@@ -38,8 +47,18 @@ for lib in "${STRIP[@]}"; do
   rm -f "$INTERNAL/$lib"
 done
 
-# Versioned sonames (e.g. libwebkit2gtk-4.1.so.0.24.3)
 shopt -s nullglob
-for _so in "$INTERNAL"/libwebkit2gtk-*.so* "$INTERNAL"/libjavascriptcoregtk-*.so*; do
-  rm -f "$_so"
+for _pat in \
+  libwebkit2gtk-*.so* \
+  libjavascriptcoregtk-*.so* \
+  libsoup-*.so* \
+  libmount.so* \
+  libblkid.so* \
+  libuuid.so*
+do
+  for _so in "$INTERNAL"/$_pat; do
+    rm -f "$_so"
+  done
 done
+
+echo "strip_internal_gtk: removed host-conflicting libs from $(basename "$(dirname "$INTERNAL")")/_internal"

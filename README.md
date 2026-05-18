@@ -55,17 +55,20 @@ Optional **cookies** for yt-dlp: place `cookies.txt` next to the installed `yt_c
 
 ## Desktop bundles (GitHub Actions + PyInstaller)
 
-Similar idea to the **Flet** repo: pushing to `main` / `master` or a tag `v*` runs **`.github/workflows/build.yml`**, which builds **Linux / Windows / macOS** zips via **PyInstaller** (`packaging/pyinstaller/dlpulse_next.spec`).
+Pre-built **Linux / Windows / macOS** zips are published on **[GitHub Releases](https://github.com/calvarr/DLPulse-next/releases)**. The in-app **Settings → DLPulse Next** panel shows your version and can check for newer releases.
 
-Each bundle includes:
+Pushing to `main` / `master` or a tag `v*` runs **`.github/workflows/build.yml`** (PyInstaller: `packaging/pyinstaller/dlpulse_next.spec`).
+
+Each bundle includes (no separate install of these tools):
 
 - **yt-dlp** (full Python package + extractors)
-- **ffmpeg** via **imageio-ffmpeg** (platform binary next to the app)
-- Flask **static** UI, pywebview, Chromecast dependencies
+- **ffmpeg** via **imageio-ffmpeg**
+- **aria2c** (multi-connection downloads)
+- Flask **static** UI, pywebview, Chromecast stack
 
-**Linux:** WebKitGTK is still a **system** dependency on the machine where you run the binary (like a dev install); the workflow installs it on the Ubuntu runner for the build only.
+**Linux:** WebKitGTK is still required on the **target** machine for the native window ([pywebview GTK](https://pywebview.flowrl.com/guide/installation.html)).
 
-**Releases:** tag `v1.0.0` → normal GitHub Release; pushes to the default branch also refresh the prerelease tag **`dlpulse-next-continuous`** (separate from the Flet app’s `continuous` tag if both exist in one org).
+**Release tags:** push `v2.0.0` (etc.) for a stable release; pushes to `main` also refresh prerelease **`dlpulse-next-continuous`**.
 
 Local one-off build: see `packaging/pyinstaller/README.md`.
 

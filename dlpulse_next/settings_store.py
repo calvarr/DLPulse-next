@@ -241,6 +241,19 @@ def set_github_update_dismissed_main_sha(sha: str) -> None:
     _write_settings(data)
 
 
+def get_app_update_dismissed_key() -> str | None:
+    s = (_read_settings().get("app_update_dismissed_key") or "").strip()
+    return s[:80] if s else None
+
+
+def set_app_update_dismissed_key(key: str) -> None:
+    data = _read_settings()
+    data["app_update_dismissed_key"] = (key or "").strip()[:80]
+    if "download_dir" not in data:
+        data["download_dir"] = str(get_downloads_dir())
+    _write_settings(data)
+
+
 def get_download_parallel() -> int:
     """How many videos to download at once (playlist / multi-select)."""
     try:

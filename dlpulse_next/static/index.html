@@ -16,6 +16,7 @@
   </header>
   <div class="banner" id="gh-banner">
     <span id="gh-msg"></span>
+    <button type="button" class="ghost" id="gh-open-releases" data-btn-icon="link" hidden>Open releases</button>
     <button type="button" class="ghost" id="gh-dismiss" data-btn-icon="close">Dismiss</button>
   </div>
   <nav class="tabs" role="tablist">
@@ -230,8 +231,9 @@
         <article class="about-card">
           <h3 class="about-subheading">This edition (source &amp; releases)</h3>
           <p class="about-url" id="about-repo-url">https://github.com/calvarr/DLPulse-next</p>
-          <p class="about-blurb">Source code, issues, and desktop builds for DLPulse Next on GitHub.</p>
+          <p class="about-blurb">Source code, issues, and cross-platform desktop zips (yt-dlp, ffmpeg, aria2c bundled).</p>
           <button type="button" class="primary" id="about-open-repo" data-btn-icon="link">Open repository</button>
+          <button type="button" class="ghost" id="about-open-releases" data-btn-icon="upgrade" style="margin-top:8px">Open releases (downloads)</button>
         </article>
       </div>
     </section>
@@ -309,6 +311,18 @@
               <input type="number" id="set-aria2-x" min="1" max="32" step="1" value="16" />
             </div>
           </div>
+        </fieldset>
+
+        <fieldset class="settings-card settings-card--span2">
+          <legend>DLPulse Next</legend>
+          <p class="settings-version-line">Installed version: <strong id="set-app-version">…</strong></p>
+          <p class="settings-hint" id="set-app-build" hidden></p>
+          <p class="settings-hint" id="set-app-bundled"></p>
+          <div class="settings-actions row">
+            <button type="button" class="ghost" id="btn-check-app-update" data-btn-icon="refresh">Check for updates</button>
+            <button type="button" class="ghost" id="btn-open-releases" data-btn-icon="link">Open GitHub Releases</button>
+          </div>
+          <p class="status" id="set-app-update-status"></p>
         </fieldset>
 
         <fieldset class="settings-card settings-card--span2">

@@ -110,9 +110,20 @@ jobs:
         shell: pwsh
         run: |
           choco install aria2 -y --no-progress
-          $bin = (Get-Command aria2c).Source
+          $exe = $null
+          foreach ($p in @(
+            "$env:ProgramData\chocolatey\bin\aria2c.exe",
+            "$env:ChocolateyInstall\bin\aria2c.exe"
+          )) {
+            if ($p -and (Test-Path -LiteralPath $p)) { $exe = $p; break }
+          }
+          if (-not $exe) {
+            $found = Get-ChildItem -Path "$env:ChocolateyInstall\lib\aria2" -Filter aria2c.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($found) { $exe = $found.FullName }
+          }
+          if (-not $exe) { throw "aria2c.exe not found after choco install aria2" }
           New-Item -ItemType Directory -Force -Path packaging/binaries | Out-Null
-          Copy-Item $bin packaging/binaries/aria2c.exe
+          Copy-Item -LiteralPath $exe -Destination packaging/binaries/aria2c.exe
           & packaging/binaries/aria2c.exe --version
 
       - name: PyInstaller
@@ -196,9 +207,18 @@ jobs:
           body: |
             Automated **DLPulse Next** (pywebview) build from `${{ github.sha }}`.
 
-            Each zip contains `DLPulseNext/` with **yt-dlp**, **ffmpeg** (imageio-ffmpeg), **aria2c** (when staged at build), and the web UI.
+            ### Downloads (no extra installs required)
+            | Platform | Zip |
+            |----------|-----|
+            | Linux | `DLPulseNext-linux.zip` |
+            | Windows | `DLPulseNext-windows.zip` |
+            | macOS | `DLPulseNext-macos.zip` |
 
-            For a stable release, push a tag `v*` on this branch.
+            Each archive contains `DLPulseNext/` with **yt-dlp**, **ffmpeg** (imageio-ffmpeg), **aria2c**, and the full UI — unpack and run `DLPulseNext` / `DLPulseNext.exe`.
+
+            **Linux:** install [WebKitGTK](https://pywebview.flowrl.com/guide/installation.html#gtk) on the target machine for the native window.
+
+            For a **stable** release, push a version tag `v*` (e.g. `v2.0.0`).
           prerelease: true
           allowUpdates: true
           make_latest: false

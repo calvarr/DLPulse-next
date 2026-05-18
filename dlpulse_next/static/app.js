@@ -794,6 +794,10 @@ async function init() {
   try {
     const v = await api("/api/version");
     $("ver-badge").textContent = "v" + v.version;
+    $("ver-badge").title = v.commit
+      ? `Build ${(v.commit || "").slice(0, 7)} — click Settings → Check for updates`
+      : "DLPulse Next";
+    applyVersionPanel(v);
   } catch (_) {
     $("ver-badge").textContent = "";
   }
@@ -842,24 +846,98 @@ async function loadSettingsUi() {
   playbackMode = (s.playback_mode || "internal").toLowerCase();
 }
 
-async function checkGithub() {
-  try {
-    const g = await api("/api/github_update");
-    const b = $("gh-banner");
-    if (g.show_banner && g.message) {
-      $("gh-msg").textContent = g.message;
-      b.classList.add("show");
-      b.dataset.sha = g.remote_main_sha || "";
-    } else b.classList.remove("show");
-  } catch (_) {
-    $("gh-banner").classList.remove("show");
+const DEFAULT_RELEASES_URL = "https://github.com/calvarr/DLPulse-next/releases";
+
+function applyVersionPanel(v) {
+  const verEl = $("set-app-version");
+  if (verEl) verEl.textContent = "v" + (v.version || "?");
+  const buildEl = $("set-app-build");
+  if (buildEl) {
+    if (v.commit) {
+      buildEl.hidden = false;
+      buildEl.textContent = `Build commit: ${v.commit.slice(0, 7)}`;
+    } else {
+      buildEl.hidden = true;
+      buildEl.textContent = "";
+    }
+  }
+  const bundledEl = $("set-app-bundled");
+  if (bundledEl && v.bundled) {
+    const parts = [];
+    if (v.bundled.ffmpeg) parts.push("ffmpeg bundled");
+    if (v.bundled.aria2c_bundled) parts.push("aria2c bundled");
+    else if (v.bundled.aria2c) parts.push("aria2c (system)");
+    if (v.bundled.ytdlp) parts.push(`yt-dlp ${v.bundled.ytdlp}`);
+    bundledEl.textContent = parts.length ? parts.join(" · ") : "";
   }
 }
 
-$("gh-dismiss").addEventListener("click", async () => {
-  const sha = $("gh-banner").dataset.sha || "";
-  await api("/api/github_update/dismiss", { method: "POST", body: { sha } });
+function showUpdateBanner(g) {
+  const b = $("gh-banner");
+  const openBtn = $("gh-open-releases");
+  if (!b) return;
+  if (g.show_banner && g.message) {
+    $("gh-msg").textContent = g.message;
+    b.classList.add("show");
+    b.dataset.dismissKey = g.dismiss_key || g.remote_main_sha || "";
+    const releasesUrl = g.releases_url || g.release_page_url || DEFAULT_RELEASES_URL;
+    b.dataset.releasesUrl = releasesUrl;
+    if (openBtn) {
+      openBtn.hidden = false;
+      openBtn.onclick = () => window.open(releasesUrl, "_blank", "noopener,noreferrer");
+    }
+  } else {
+    b.classList.remove("show");
+    if (openBtn) openBtn.hidden = true;
+  }
+}
+
+async function checkGithub() {
+  try {
+    const g = await api("/api/github_update");
+    showUpdateBanner(g);
+    return g;
+  } catch (_) {
+    $("gh-banner")?.classList.remove("show");
+    return null;
+  }
+}
+
+$("gh-dismiss")?.addEventListener("click", async () => {
+  const key = $("gh-banner")?.dataset.dismissKey || "";
+  await api("/api/github_update/dismiss", { method: "POST", body: { dismiss_key: key, sha: key } });
   $("gh-banner").classList.remove("show");
+});
+
+$("btn-check-app-update")?.addEventListener("click", async () => {
+  const st = $("set-app-update-status");
+  if (st) {
+    st.textContent = "Checking GitHub Releases…";
+    st.className = "status";
+  }
+  try {
+    const g = await checkGithub();
+    if (!st) return;
+    if (g?.show_banner) {
+      st.textContent = g.message;
+      st.className = "status ok";
+    } else if (g?.latest_tag && g.installed_version) {
+      st.textContent = `You are up to date (v${g.installed_version}; latest release: ${g.latest_tag}).`;
+      st.className = "status ok";
+    } else {
+      st.textContent = "No newer release found (or GitHub is unreachable).";
+      st.className = "status";
+    }
+  } catch (e) {
+    if (st) {
+      st.textContent = e.message || String(e);
+      st.className = "status error";
+    }
+  }
+});
+
+$("btn-open-releases")?.addEventListener("click", () => {
+  window.open(DEFAULT_RELEASES_URL, "_blank", "noopener,noreferrer");
 });
 
 $("set-save").addEventListener("click", async () => {
@@ -2268,6 +2346,9 @@ function setupAboutTab() {
   });
   $("about-open-repo")?.addEventListener("click", () => {
     window.open(REPO, "_blank", "noopener,noreferrer");
+  });
+  $("about-open-releases")?.addEventListener("click", () => {
+    window.open(`${REPO}/releases`, "_blank", "noopener,noreferrer");
   });
 }
 

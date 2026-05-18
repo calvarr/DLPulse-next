@@ -63,6 +63,7 @@ from dlpulse_next.settings_store import (
     get_download_parallel,
     get_download_rate_limit_mbps,
     get_downloads_dir,
+    get_app_update_dismissed_key,
     get_github_update_dismissed_main_sha,
     get_playback_mode,
     get_ui_theme,
@@ -74,6 +75,7 @@ from dlpulse_next.settings_store import (
     set_download_parallel,
     set_download_rate_limit_mbps,
     set_downloads_dir,
+    set_app_update_dismissed_key,
     set_github_update_dismissed_main_sha,
     set_playback_mode,
     set_ui_theme,
@@ -488,7 +490,33 @@ def create_app() -> Flask:
 
     @app.get("/api/version")
     def api_version():
-        return jsonify({"ok": True, "version": __version__})
+        from dlpulse_next.github_update import (
+            GITHUB_RELEASES_URL,
+            commit_page_url,
+            fetch_latest_github_release,
+            get_local_commit_sha,
+        )
+        from dlpulse_next.ytdlp_update import get_installed_ytdlp_version
+
+        commit = get_local_commit_sha()
+        rel = fetch_latest_github_release()
+        return jsonify(
+            {
+                "ok": True,
+                "version": __version__,
+                "commit": commit,
+                "commit_url": commit_page_url(commit) if commit else None,
+                "releases_url": GITHUB_RELEASES_URL,
+                "latest_release_tag": (rel or {}).get("tag_name") if rel else None,
+                "latest_release_url": (rel or {}).get("html_url") if rel else None,
+                "bundled": {
+                    "ffmpeg": ffmpeg_available(),
+                    "aria2c": aria2c_available(),
+                    "aria2c_bundled": aria2c_is_bundled(),
+                    "ytdlp": get_installed_ytdlp_version(),
+                },
+            }
+        )
 
     @app.get("/api/format_presets")
     def api_format_presets():
@@ -1335,23 +1363,37 @@ def create_app() -> Flask:
         from dlpulse_next.github_update import check_app_github_update
 
         info = check_app_github_update()
-        dismissed = get_github_update_dismissed_main_sha()
-        show = info.show_banner and (not dismissed or dismissed != (info.remote_main_sha or "")[:40])
+        dismissed_key = get_app_update_dismissed_key()
+        dismiss_key = info.dismiss_key or (info.remote_main_sha or "")[:40] or None
+        legacy_sha = get_github_update_dismissed_main_sha()
+        dismissed = dismissed_key == dismiss_key if dismiss_key else False
+        if not dismissed and legacy_sha and info.kind == "commit":
+            dismissed = legacy_sha == (info.remote_main_sha or "")[:40]
+        show = info.show_banner and not dismissed
         return jsonify(
             {
                 "ok": True,
                 "show_banner": show,
                 "message": info.message,
+                "kind": info.kind,
+                "installed_version": info.installed_version,
+                "latest_version": info.latest_version,
+                "latest_tag": info.latest_tag,
+                "releases_url": info.releases_url,
+                "release_page_url": info.release_page_url,
                 "remote_main_sha": info.remote_main_sha,
+                "dismiss_key": dismiss_key,
             }
         )
 
     @app.post("/api/github_update/dismiss")
     def api_github_dismiss():
         data = request.get_json(force=True, silent=True) or {}
-        sha = str(data.get("sha") or "").strip()
-        if sha:
-            set_github_update_dismissed_main_sha(sha)
+        key = str(data.get("dismiss_key") or data.get("sha") or "").strip()
+        if key:
+            set_app_update_dismissed_key(key)
+            if len(key) >= 7 and all(c in "0123456789abcdef" for c in key[:40].lower()):
+                set_github_update_dismissed_main_sha(key)
         return jsonify({"ok": True})
 
     return app

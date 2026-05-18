@@ -1039,9 +1039,20 @@ th {
 
 .banner.show {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 10px 12px;
+}
+
+.banner.show #gh-msg {
+  flex: 1;
+  min-width: 200px;
+}
+
+.settings-version-line {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
 }
 
 #ytdlp-out {

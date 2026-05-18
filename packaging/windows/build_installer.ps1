@@ -8,6 +8,7 @@ try {
     if (-not (Test-Path (Join-Path $source "DLPulseNext.exe"))) {
         throw "Missing dist\DLPulseNext\DLPulseNext.exe — run PyInstaller first."
     }
+    $source = (Resolve-Path -LiteralPath $source).Path
 
     $candidates = @(
         "${env:ProgramFiles(x86)}\NSIS\makensis.exe",

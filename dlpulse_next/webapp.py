@@ -1435,7 +1435,7 @@ def run_desktop() -> None:
             print(
                 "\n  DLPulse Next — native GTK/Qt bindings are missing for pywebview.\n"
                 f"  Opened in your browser: {url}\n"
-                "  (On Arch/Manjaro: install webkit2gtk + PyGObject, then "
+                "  (On Arch/Manjaro: install webkit2gtk-4.1 + PyGObject, then "
                 "`pip install -e \".[webview-gtk]\"` — see README.)\n\n"
                 "  Press Enter here to stop the server (or close this terminal with Ctrl+C).\n",
                 flush=True,

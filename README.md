@@ -21,7 +21,7 @@ Each bundle includes **yt-dlp**, **ffmpeg**, **aria2c**, and the full UI. On **L
 
 ```bash
 # Arch / Manjaro
-sudo pacman -S gtk3 webkit2gtk gobject-introspection-runtime
+sudo pacman -S gtk3 webkit2gtk-4.1 gobject-introspection-runtime
 
 # Debian / Ubuntu (22.04 — WebKit 4.0)
 sudo apt install libgtk-3-0 libwebkit2gtk-4.0-37 gir1.2-webkit2-4.0 gobject-introspection

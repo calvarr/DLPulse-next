@@ -19,11 +19,12 @@ dependencies = [
 
 [project.optional-dependencies]
 # Linux: needs system WebKit/GTK (e.g. Arch `webkit2gtk`, `gobject-introspection-runtime`) then pip install.
-webview-gtk = ["PyGObject>=3.42"]
+# Pin <3.49: newer PyGObject requires libgirepository-2.0 (Ubuntu 22.04 CI has 1.0).
+webview-gtk = ["PyGObject>=3.42,<3.49"]
 # PyInstaller desktop bundles (see packaging/pyinstaller/ and .github/workflows).
 build = [
     "pyinstaller>=6.0",
-    "PyGObject>=3.42; sys_platform == 'linux'",
+    "PyGObject>=3.42,<3.49; sys_platform == 'linux'",
 ]
 
 [project.scripts]

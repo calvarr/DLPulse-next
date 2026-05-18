@@ -1,0 +1,8 @@
+.venv/
+/build/
+/dist/
+*.egg-info/
+*.py[cod]
+__pycache__/
+*.spec.bak
+dlpulse_next/build_commit.txt

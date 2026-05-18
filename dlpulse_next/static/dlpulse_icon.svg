@@ -1,0 +1,54 @@
+<svg width="100%" viewBox="0 0 760 760" role="img" xmlns="http://www.w3.org/2000/svg" style="">
+  <title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(251, 251, 254);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">DLPulse icon v7</title>
+  <desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(251, 251, 254);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">DLPulse circular icon with headphones over ECG waveform and gradient concentric circles.</desc>
+
+  <defs>
+    
+    <clipPath id="cc">
+      <circle cx="340" cy="340" r="330"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background cerc -->
+  <circle cx="340" cy="340" r="330" style="fill:rgb(26, 31, 46);stroke:none;color:rgb(251, 251, 254);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="340" cy="340" r="314" opacity="0.5" style="fill:rgb(33, 39, 54);stroke:none;color:rgb(251, 251, 254);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.5;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Concentric circles -->
+  <g clip-path="url(#cc)" fill="none" style="fill:none;stroke:none;color:rgb(251, 251, 254);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">
+    <circle cx="340" cy="340" r="60" stroke="#79c0ff" stroke-width="3.5" opacity="0.70" style="fill:none;stroke:rgb(121, 192, 255);color:rgb(251, 251, 254);stroke-width:3.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.7;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+    <circle cx="340" cy="340" r="110" stroke="#6ab4ff" stroke-width="3.0" opacity="0.58" style="fill:none;stroke:rgb(106, 180, 255);color:rgb(251, 251, 254);stroke-width:3px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.58;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+    <circle cx="340" cy="340" r="160" stroke="#58a6ff" stroke-width="2.5" opacity="0.46" style="fill:none;stroke:rgb(88, 166, 255);color:rgb(251, 251, 254);stroke-width:2.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.46;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+    <circle cx="340" cy="340" r="210" stroke="#4496ef" stroke-width="2.0" opacity="0.36" style="fill:none;stroke:rgb(68, 150, 239);color:rgb(251, 251, 254);stroke-width:2px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.36;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+    <circle cx="340" cy="340" r="260" stroke="#3080d8" stroke-width="1.8" opacity="0.26" style="fill:none;stroke:rgb(48, 128, 216);color:rgb(251, 251, 254);stroke-width:1.8px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.26;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+    <circle cx="340" cy="340" r="310" stroke="#2060b8" stroke-width="1.5" opacity="0.18" style="fill:none;stroke:rgb(32, 96, 184);color:rgb(251, 251, 254);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.18;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+    <circle cx="340" cy="340" r="360" stroke="#1a4f9a" stroke-width="1.2" opacity="0.12" style="fill:none;stroke:rgb(26, 79, 154);color:rgb(251, 251, 254);stroke-width:1.2px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.12;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+    <circle cx="340" cy="340" r="410" stroke="#143880" stroke-width="1.0" opacity="0.07" style="fill:none;stroke:rgb(20, 56, 128);color:rgb(251, 251, 254);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.07;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  </g>
+
+  <!-- Baseline EKG -->
+  <line x1="10" y1="390" x2="670" y2="390" stroke="#2d3650" stroke-width="1.5" clip-path="url(#cc)" style="fill:rgb(0, 0, 0);stroke:rgb(45, 54, 80);color:rgb(251, 251, 254);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- ECG glow -->
+  <polyline clip-path="url(#cc)" points="10,390 120,390 148,362 176,390 210,390 250,390 270,170 292,530 312,330 338,390 390,390 430,390 458,368 480,390 530,390 670,390" fill="none" stroke="#1f6feb" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity="0.25" style="fill:none;stroke:rgb(31, 111, 235);color:rgb(251, 251, 254);stroke-width:14px;stroke-linecap:round;stroke-linejoin:round;opacity:0.25;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- ECG line -->
+  <polyline clip-path="url(#cc)" points="10,390 120,390 148,362 176,390 210,390 250,390 270,170 292,530 312,330 338,390 390,390 430,390 458,368 480,390 530,390 670,390" fill="none" stroke="#58a6ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" style="fill:none;stroke:rgb(88, 166, 255);color:rgb(251, 251, 254);stroke-width:4px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Pulse peak dot -->
+  <circle cx="270" cy="170" r="9" fill="#58a6ff" opacity="0.95" style="fill:rgb(88, 166, 255);stroke:none;color:rgb(251, 251, 254);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.95;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="270" cy="170" r="17" fill="none" stroke="#58a6ff" stroke-width="2.5" opacity="0.3" style="fill:none;stroke:rgb(88, 166, 255);color:rgb(251, 251, 254);stroke-width:2.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.3;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Headphones arc -->
+  <path d="M 120,400 C 120,140 560,140 560,400" fill="none" stroke="#79c0ff" stroke-width="18" stroke-linecap="round" style="fill:none;stroke:rgb(121, 192, 255);color:rgb(251, 251, 254);stroke-width:18px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Left ear cup -->
+  <rect x="76" y="340" width="66" height="140" rx="28" fill="#58a6ff" opacity="0.95" style="fill:rgb(88, 166, 255);stroke:none;color:rgb(251, 251, 254);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.95;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <rect x="92" y="358" width="34" height="104" rx="16" fill="#1a1f2e" opacity="0.65" style="fill:rgb(26, 31, 46);stroke:none;color:rgb(251, 251, 254);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.65;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Right ear cup -->
+  <rect x="538" y="340" width="66" height="140" rx="28" fill="#58a6ff" opacity="0.95" style="fill:rgb(88, 166, 255);stroke:none;color:rgb(251, 251, 254);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.95;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <rect x="554" y="358" width="34" height="104" rx="16" fill="#1a1f2e" opacity="0.65" style="fill:rgb(26, 31, 46);stroke:none;color:rgb(251, 251, 254);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.65;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Wordmark -->
+  <text x="340" y="618" font-family="monospace, sans-serif" font-size="42" font-weight="700" fill="#58a6ff" text-anchor="middle" opacity="0.75" letter-spacing="8" style="fill:rgb(88, 166, 255);stroke:none;color:rgb(251, 251, 254);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.75;font-family:monospace, sans-serif;font-size:42px;font-weight:700;text-anchor:middle;dominant-baseline:auto">DL<tspan fill="#f0883e" style="fill:rgb(240, 136, 62);stroke:none;color:rgb(251, 251, 254);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:monospace, sans-serif;font-size:42px;font-weight:700;text-anchor:middle;dominant-baseline:auto">PULSE</tspan></text>
+
+</svg>

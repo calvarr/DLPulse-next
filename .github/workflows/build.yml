@@ -1,0 +1,205 @@
+# Build DLPulse Next — Linux / Windows / macOS (PyInstaller)
+#
+# Bundles: yt-dlp, imageio-ffmpeg (ffmpeg binary), Flask static UI, pywebview stack.
+# Triggers: push to main/master, tags v*, manual workflow_dispatch.
+# Releases: v* tags get a release; main/master updates prerelease "dlpulse-next-continuous".
+
+name: Build DLPulse Next
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: build-dlpulse-next-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: linux
+            artifact_name: dlpulse-next-linux
+          - os: windows-latest
+            target: windows
+            artifact_name: dlpulse-next-windows
+          - os: macos-latest
+            target: macos
+            artifact_name: dlpulse-next-macos
+
+    runs-on: ${{ matrix.os }}
+    name: DLPulse Next (${{ matrix.target }})
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Linux — GTK / WebKit for pywebview (import test)
+        if: matrix.target == 'linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libgtk-3-0 libwebkit2gtk-4.0-37 gir1.2-webkit2-4.0
+
+      - name: Optional donate images (standalone bundle)
+        shell: bash
+        run: |
+          set -e
+          mkdir -p dlpulse_next/static/donate
+          for url in \
+            "https://raw.githubusercontent.com/calvarr/DLPulse/main/yt/flet_app/cofe.png" \
+            "https://raw.githubusercontent.com/calvarr/DLPulse/master/yt/flet_app/cofe.png"
+          do
+            curl -fsSL -o dlpulse_next/static/donate/cofe.png "$url" && break || true
+          done
+          for url in \
+            "https://raw.githubusercontent.com/calvarr/DLPulse/main/yt/BTC.jpeg" \
+            "https://raw.githubusercontent.com/calvarr/DLPulse/master/yt/BTC.jpeg"
+          do
+            curl -fsSL -o dlpulse_next/static/donate/BTC.jpeg "$url" && break || true
+          done
+          ls -la dlpulse_next/static/donate || true
+
+      - name: Install project + PyInstaller
+        run: |
+          python -m pip install --upgrade pip wheel setuptools
+          pip install -e ".[build]"
+
+      - name: Verify imageio-ffmpeg binary
+        run: |
+          python -c "import imageio_ffmpeg as i; print('ffmpeg:', i.get_ffmpeg_exe())"
+
+      - name: Record commit SHA (in-app GitHub banner)
+        shell: bash
+        run: printf '%s\n' "${GITHUB_SHA}" > dlpulse_next/build_commit.txt
+
+      - name: Stage aria2c for bundle (Linux)
+        if: matrix.target == 'linux'
+        shell: bash
+        run: |
+          set -e
+          sudo apt-get install -y --no-install-recommends aria2
+          mkdir -p packaging/binaries
+          cp "$(command -v aria2c)" packaging/binaries/aria2c
+          chmod +x packaging/binaries/aria2c
+          packaging/binaries/aria2c --version | head -1
+
+      - name: Stage aria2c for bundle (macOS)
+        if: matrix.target == 'macos'
+        shell: bash
+        run: |
+          set -e
+          brew install aria2
+          mkdir -p packaging/binaries
+          cp "$(command -v aria2c)" packaging/binaries/aria2c
+          chmod +x packaging/binaries/aria2c
+          packaging/binaries/aria2c --version | head -1
+
+      - name: Stage aria2c for bundle (Windows)
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          choco install aria2 -y --no-progress
+          $bin = (Get-Command aria2c).Source
+          New-Item -ItemType Directory -Force -Path packaging/binaries | Out-Null
+          Copy-Item $bin packaging/binaries/aria2c.exe
+          & packaging/binaries/aria2c.exe --version
+
+      - name: PyInstaller
+        env:
+          PYTHONUTF8: "1"
+          PYTHONIOENCODING: utf-8
+        run: pyinstaller packaging/pyinstaller/dlpulse_next.spec
+
+      - name: Pack artifact (zip)
+        shell: bash
+        run: |
+          set -e
+          cd dist
+          zip -r9 ../DLPulseNext-${{ matrix.target }}.zip DLPulseNext
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: DLPulseNext-${{ matrix.target }}.zip
+          retention-days: 30
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: >-
+      success() &&
+      (startsWith(github.ref, 'refs/tags/v') ||
+       github.ref == 'refs/heads/main' ||
+       github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: dlpulse-next-*
+          merge-multiple: true
+
+      - name: Stage release assets
+        run: |
+          set -e
+          mkdir -p release-assets
+          shopt -s nullglob
+          for f in artifacts/*.zip artifacts/**/*.zip; do
+            [ -f "$f" ] && cp -f "$f" release-assets/
+          done
+          ls -la release-assets/
+
+      - name: Verify release assets
+        run: test "$(find release-assets -name '*.zip' -type f | wc -l)" -ge 1
+
+      - name: Move continuous tag (main/master)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -fa dlpulse-next-continuous -m "DLPulse Next continuous build" "${GITHUB_SHA}"
+          git push origin refs/tags/dlpulse-next-continuous --force
+
+      - name: GitHub Release (version tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: DLPulse Next ${{ github.ref_name }}
+          files: release-assets/*
+          generate_release_notes: true
+
+      - name: GitHub Release (continuous)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dlpulse-next-continuous
+          name: DLPulse Next (continuous)
+          body: |
+            Automated **DLPulse Next** (pywebview) build from `${{ github.sha }}`.
+
+            Each zip contains `DLPulseNext/` with **yt-dlp**, **ffmpeg** (imageio-ffmpeg), **aria2c** (when staged at build), and the web UI.
+
+            For a stable release, push a tag `v*` on this branch.
+          prerelease: true
+          allowUpdates: true
+          make_latest: false
+          files: release-assets/*

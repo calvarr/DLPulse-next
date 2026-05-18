@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DLPulse</title>
+  <link rel="icon" id="app-favicon" href="/static/dlpulse_icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/static/dlpulse_icon.png" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <img class="app-icon" src="/static/dlpulse_icon.svg" width="32" height="32" alt="" data-themed-icon="app" />
+    <h1>DLPulse</h1>
+    <span class="badge" id="ver-badge">…</span>
+  </header>
+  <div class="banner" id="gh-banner">
+    <span id="gh-msg"></span>
+    <button type="button" class="ghost" id="gh-dismiss" data-btn-icon="close">Dismiss</button>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button type="button" class="active tab-btn" data-tab="search" data-btn-icon="search">Search &amp; downloads</button>
+    <button type="button" class="tab-btn" data-tab="library" data-btn-icon="library">Library</button>
+    <button type="button" class="tab-btn" data-tab="player" data-btn-icon="play">Player</button>
+    <button type="button" class="tab-btn" data-tab="cast" data-btn-icon="chromecast">Chromecast</button>
+    <button type="button" class="tab-btn" data-tab="donate" data-btn-icon="donate">Donate</button>
+    <button type="button" class="tab-btn" data-tab="credits" data-btn-icon="credits">Credits</button>
+    <button type="button" class="tab-btn" data-tab="about" data-btn-icon="link">About</button>
+    <button type="button" class="tab-btn" data-tab="settings" data-btn-icon="settings">Settings</button>
+  </nav>
+  <main>
+    <section class="panel active" id="panel-search">
+      <div class="row">
+        <div style="flex:1;min-width:220px">
+          <label for="q">Search or URL</label>
+          <textarea id="q" rows="3" placeholder="Search words or https://…"></textarea>
+        </div>
+      </div>
+      <div class="row">
+        <label><input type="checkbox" id="src-yt" checked /> YouTube</label>
+        <label><input type="checkbox" id="src-sc" /> SoundCloud</label>
+        <button type="button" class="primary" id="btn-resolve" data-btn-icon="search">Search / open URL</button>
+      </div>
+      <p class="status" id="search-status"></p>
+      <div class="row" style="align-items:center">
+        <strong style="font-size:0.9rem">Results</strong>
+        <label style="margin-left:auto"><input type="checkbox" id="results-sel-all" /> Select all</label>
+      </div>
+      <div class="results-wrap">
+        <table class="results-table">
+          <thead><tr><th class="th-thumb"></th><th></th><th>Title</th><th></th></tr></thead>
+          <tbody id="hits-body"></tbody>
+        </table>
+      </div>
+      <div class="row" style="margin-top:16px;flex-wrap:wrap">
+        <div class="preset-dd-wrap">
+          <label id="preset-dd-lbl" for="preset-dd-btn">Format preset</label>
+          <div class="preset-dd" id="preset-dd">
+            <input type="hidden" id="preset" value="0" />
+            <button type="button" class="preset-dd-btn" id="preset-dd-btn" aria-haspopup="listbox" aria-expanded="false">
+              <span id="preset-dd-btn-text">…</span>
+              <span class="preset-dd-chevron" aria-hidden="true">▲</span>
+            </button>
+            <ul class="preset-dd-list" id="preset-dd-list" role="listbox" hidden></ul>
+          </div>
+        </div>
+        <label><input type="checkbox" id="dl-cover" /> Download cover image (thumbnail)</label>
+        <button type="button" class="ghost" id="btn-pick-session" data-btn-icon="folder">Download to…</button>
+      </div>
+      <p class="hint" id="session-lbl" hidden></p>
+      <div class="row">
+        <button type="button" class="primary" id="btn-download" data-btn-icon="download">Download selected</button>
+        <button type="button" class="ghost" id="btn-play-sel-search" data-btn-icon="play">Play selected</button>
+        <button type="button" class="ghost btn-cast-row" id="btn-cc-search-selected" data-btn-icon="chromecast" title="Prepare Chromecast playlist from selection">Chromecast selected</button>
+      </div>
+      <progress id="dl-progress" max="100" value="0" style="display:none;width:100%;height:8px;margin-top:8px"></progress>
+      <p class="status" id="dl-status"></p>
+    </section>
+
+    <section class="panel" id="panel-library">
+      <div class="row" style="align-items:flex-end;flex-wrap:wrap;gap:8px">
+        <div style="flex:1;min-width:180px">
+          <label for="lib-filter" style="font-size:0.85rem;color:var(--muted)">Filter</label>
+          <input type="search" id="lib-filter" placeholder="Filter by name or path…" autocomplete="off" style="width:100%;margin-top:4px" />
+        </div>
+      </div>
+      <div class="row" style="align-items:center;flex-wrap:wrap">
+        <label class="lib-show-all-wrap"><input type="checkbox" id="lib-show-all-files" /> Show all files</label>
+      </div>
+      <div class="row" style="align-items:center">
+        <button type="button" class="ghost" id="lib-refresh" data-btn-icon="refresh">Refresh</button>
+        <label><input type="checkbox" id="lib-sel-all-cb" /> Select all</label>
+        <button type="button" class="primary" id="lib-play" data-btn-icon="play">Play selected</button>
+        <button type="button" class="ghost" id="lib-rename" data-btn-icon="rename">Rename…</button>
+        <button type="button" class="ghost danger" id="lib-delete" data-btn-icon="delete">Delete selected</button>
+        <button type="button" class="ghost" id="lib-browse" data-btn-icon="folder">Browse folder…</button>
+        <button type="button" class="ghost" id="lib-use-save" data-btn-icon="folder">Use save folder</button>
+        <button type="button" class="ghost btn-cast-row" id="lib-cast-prep" data-btn-icon="chromecast">Prepare for Chromecast</button>
+      </div>
+      <p class="hint" id="lib-cwd"></p>
+      <div class="status" id="lib-empty" style="display:none;margin-bottom:8px"></div>
+      <div class="results-wrap">
+        <table class="results-table lib-table">
+          <thead><tr><th class="th-lib-cb"></th><th>File</th><th>Info</th></tr></thead>
+          <tbody id="lib-body"></tbody>
+        </table>
+      </div>
+      <p class="status" id="lib-status"></p>
+    </section>
+
+    <section class="panel" id="panel-player">
+      <div class="row" style="align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+        <button type="button" class="ghost btn-cast-row" id="btn-player-cast" data-btn-icon="chromecast" aria-label="Chromecast">Chromecast</button>
+      </div>
+      <div class="player-stage">
+        <video id="v" controls playsinline preload="auto"></video>
+        <img id="player-audio-brand" class="player-audio-brand" src="/static/dlpulse_icon.svg" width="160" height="160" alt="" aria-hidden="true" data-themed-icon="app" />
+      </div>
+      <p class="player-now-playing" id="player-now-playing" hidden aria-live="polite"></p>
+      <div class="row player-queue-row" id="player-queue-row" hidden style="margin-top:10px;flex-wrap:wrap;align-items:center;gap:8px">
+        <button type="button" class="ghost" id="btn-int-repeat" data-btn-icon="repeat" title="Repeat mode">Repeat: off</button>
+        <button type="button" class="ghost" id="btn-int-shuf" data-btn-icon="shuffle" title="Shuffle remaining tracks">Shuffle: off</button>
+      </div>
+      <audio id="a" controls style="display:none"></audio>
+      <p class="status" id="player-status"></p>
+    </section>
+
+    <section class="panel" id="panel-cast">
+      <div class="row">
+        <button type="button" class="primary btn-cast-row" id="btn-cc-disc" data-btn-icon="chromecast">Discover devices</button>
+        <button type="button" class="ghost" id="btn-cc-stop-last" data-btn-icon="stop">Stop last cast</button>
+      </div>
+      <p class="hint" id="cc-pick-hint" hidden></p>
+      <label class="cc-dev-all-wrap"><input type="checkbox" id="cc-dev-all" /> Select all devices</label>
+      <div id="cc-dev-list" class="cc-dev-list"></div>
+      <p class="hint" id="cc-lan"></p>
+      <label for="cc-stream-urls">Stream URLs</label>
+      <textarea id="cc-stream-urls" readonly rows="4" spellcheck="false"></textarea>
+      <p class="hint" id="cc-prep-hint" hidden></p>
+      <p class="hint" id="cc-time-lbl">— / —</p>
+      <div class="row" style="align-items:center;width:100%">
+        <span class="hint" style="min-width:52px">Seek</span>
+        <input type="range" id="cc-seek" min="0" max="100" step="0.25" value="0" style="flex:1" />
+      </div>
+      <div class="row" style="align-items:center;width:100%">
+        <span class="hint" style="min-width:52px">Volume</span>
+        <input type="range" id="cc-vol" min="0" max="100" step="1" value="80" style="flex:1" />
+      </div>
+      <div class="row" style="flex-wrap:wrap;align-items:center">
+        <button type="button" class="primary btn-cast-row" id="btn-cc-file" data-btn-icon="chromecast">Cast</button>
+        <button type="button" class="ghost" id="btn-cc-play-pause" data-btn-icon="playpause">Play / Pause</button>
+        <button type="button" class="ghost" id="btn-cc-stop-proj" data-btn-icon="stop">Stop casting</button>
+        <button type="button" class="ghost" id="btn-cc-repeat" data-btn-icon="repeat">Repeat: off</button>
+        <button type="button" class="ghost" id="btn-cc-shuf" data-btn-icon="shuffle">Shuffle: off</button>
+        <p class="status" id="cc-status"></p>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-donate">
+      <h2 class="donate-heading"><img class="app-icon app-icon-sm" src="/static/dlpulse_icon.svg" width="28" height="28" alt="" data-themed-icon="app" /> Donate</h2>
+      <div class="row" style="flex-wrap:wrap;align-items:flex-start;gap:24px;margin-top:12px">
+        <div style="flex:1;min-width:280px;max-width:400px">
+          <p style="margin:0 0 6px;font-weight:600;color:var(--accent)">Donation link</p>
+          <p style="margin:0 0 10px;word-break:break-all;font-size:0.9rem" id="donate-bmc-url">https://buymeacoffee.com/medcodex</p>
+          <button type="button" class="primary" id="donate-open-bmc" data-btn-icon="link">Open Buy Me a Coffee</button>
+          <p style="margin:14px 0 6px;font-weight:600;color:var(--accent)">QR (Buy Me a Coffee)</p>
+          <div class="donate-qr-wrap">
+            <img id="donate-qr-bmc" alt="QR code for Buy Me a Coffee" width="200" height="200" loading="lazy" />
+          </div>
+        </div>
+        <div style="flex:1;min-width:280px;max-width:400px">
+          <p style="margin:0 0 6px;font-weight:600;color:var(--accent)">Bitcoin (BTC)</p>
+          <p style="margin:0 0 8px;font-family:monospace;font-size:0.85rem;word-break:break-all" id="donate-btc-addr">bc1q8gv3zue7wtem279rqz7rj405qftpu9855k2l2s</p>
+          <button type="button" class="ghost" id="donate-copy-btc" data-btn-icon="copy">Copy address</button>
+          <p style="margin:14px 0 6px;font-weight:600;color:var(--accent)">QR (BTC address)</p>
+          <div class="donate-qr-wrap">
+            <img id="donate-qr-btc" alt="QR code for Bitcoin address" width="200" height="200" loading="lazy" />
+          </div>
+        </div>
+      </div>
+      <p class="status" id="donate-status" style="margin-top:12px"></p>
+    </section>
+
+    <section class="panel" id="panel-credits">
+      <h2 class="credits-heading"><img class="app-icon app-icon-sm" src="/static/dlpulse_icon.svg" width="28" height="28" alt="" data-themed-icon="app" /> Open source thanks</h2>
+      <p class="credits-intro">
+        DLPulse Next builds on the work of many open-source projects and communities.
+        Thank you to their authors, maintainers, and contributors.
+      </p>
+      <h3 class="credits-subheading">Projects we rely on</h3>
+      <ul class="credits-list">
+        <li><a href="https://github.com/yt-dlp/yt-dlp" rel="noopener noreferrer" target="_blank">yt-dlp</a> — media extraction and downloads from many sites</li>
+        <li><a href="https://ffmpeg.org/" rel="noopener noreferrer" target="_blank">FFmpeg</a> — muxing, remux, and audio conversion (bundled via imageio-ffmpeg or system install)</li>
+        <li><a href="https://flask.palletsprojects.com/" rel="noopener noreferrer" target="_blank">Flask</a> &amp; <a href="https://werkzeug.palletsprojects.com/" rel="noopener noreferrer" target="_blank">Werkzeug</a> — local HTTP API and UI serving</li>
+        <li><a href="https://pywebview.flowrl.com/" rel="noopener noreferrer" target="_blank">pywebview</a> — native desktop window (WebKitGTK / Qt / Edge WebView2)</li>
+        <li><a href="https://github.com/home-assistant-libs/pychromecast" rel="noopener noreferrer" target="_blank">PyChromecast</a> &amp; <a href="https://github.com/python-zeroconf/python-zeroconf" rel="noopener noreferrer" target="_blank">Zeroconf</a> — Chromecast discovery and control</li>
+        <li><a href="https://mutagen.readthedocs.io/" rel="noopener noreferrer" target="_blank">Mutagen</a> — audio metadata</li>
+        <li><a href="https://github.com/imageio/imageio-ffmpeg" rel="noopener noreferrer" target="_blank">imageio-ffmpeg</a> — FFmpeg binaries for desktop bundles</li>
+        <li><a href="https://github.com/aria2/aria2" rel="noopener noreferrer" target="_blank">aria2c</a> — optional multi-connection download accelerator</li>
+        <li><a href="https://github.com/lincolnloop/python-qrcode" rel="noopener noreferrer" target="_blank">qrcode</a> — donation QR codes</li>
+        <li><a href="https://github.com/pypa/packaging" rel="noopener noreferrer" target="_blank">packaging</a> — version parsing</li>
+        <li><a href="https://www.python.org/" rel="noopener noreferrer" target="_blank">Python</a> — runtime and ecosystem (plus transitive libraries)</li>
+      </ul>
+      <h3 class="credits-subheading">Often used alongside</h3>
+      <ul class="credits-list credits-list--secondary">
+        <li><a href="https://mpv.io/" rel="noopener noreferrer" target="_blank">mpv</a> &amp; <a href="https://www.videolan.org/vlc/" rel="noopener noreferrer" target="_blank">VLC</a> — optional external players (Settings)</li>
+        <li>HTML5 <code>&lt;video&gt;</code> — in-app playback via the embedded browser engine</li>
+        <li>WebKitGTK / GTK — Linux system libraries for the pywebview window</li>
+      </ul>
+      <p class="credits-footnote">
+        If you maintain one of these projects: thank you. Bug reports and patches upstream help everyone.
+      </p>
+    </section>
+
+    <section class="panel" id="panel-about">
+      <h2 class="about-heading"><img class="app-icon app-icon-sm" src="/static/dlpulse_icon.svg" width="28" height="28" alt="" data-themed-icon="app" /> About DLPulse</h2>
+      <p class="about-intro">
+        DLPulse Next is the desktop edition of the
+        <a href="https://calvarr.github.io/" rel="noopener noreferrer" target="_blank">DLPulse</a>
+        ecosystem — cross-platform tools around yt-dlp for search, downloads, playback, and Chromecast.
+        On the project site you can compare editions (Flet, CLI, Textual, Android) and browse releases.
+      </p>
+      <div class="about-cards">
+        <article class="about-card">
+          <h3 class="about-subheading">Project site</h3>
+          <p class="about-url" id="about-site-url">https://calvarr.github.io/</p>
+          <p class="about-blurb">Formats overview, screenshots, and links to other DLPulse builds.</p>
+          <button type="button" class="primary" id="about-open-site" data-btn-icon="link">Open DLPulse site</button>
+        </article>
+        <article class="about-card">
+          <h3 class="about-subheading">This edition (source &amp; releases)</h3>
+          <p class="about-url" id="about-repo-url">https://github.com/calvarr/DLPulse-next</p>
+          <p class="about-blurb">Source code, issues, and desktop builds for DLPulse Next on GitHub.</p>
+          <button type="button" class="primary" id="about-open-repo" data-btn-icon="link">Open repository</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-settings">
+      <div class="settings-toolbar row">
+        <div class="settings-field settings-field--grow">
+          <label for="set-dir">Download folder</label>
+          <input type="text" id="set-dir" />
+        </div>
+        <button type="button" class="primary" id="set-save" data-btn-icon="save">Save settings</button>
+      </div>
+
+      <div class="settings-grid">
+        <fieldset class="settings-card">
+          <legend>Interface</legend>
+          <div class="settings-field">
+            <label for="set-mode">Default UI mode</label>
+            <select id="set-mode">
+              <option value="internal">Internal</option>
+              <option value="external">External player</option>
+              <option value="browser">Browser</option>
+            </select>
+          </div>
+          <div class="settings-field">
+            <label for="set-theme">Appearance</label>
+            <select id="set-theme">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </div>
+          <div class="settings-field">
+            <label for="set-castw">Cast discovery wait (seconds)</label>
+            <input type="number" id="set-castw" min="0.5" max="120" step="0.5" />
+          </div>
+        </fieldset>
+
+        <fieldset class="settings-card">
+          <legend>Players</legend>
+          <div class="settings-field">
+            <label for="set-vp">Video player command</label>
+            <input type="text" id="set-vp" placeholder="e.g. mpv %f" />
+          </div>
+          <div class="settings-field">
+            <label for="set-ap">Audio player command</label>
+            <input type="text" id="set-ap" placeholder="optional" />
+          </div>
+        </fieldset>
+
+        <fieldset class="settings-card settings-card--span2">
+          <legend>Downloads</legend>
+          <div class="settings-grid settings-grid--inner">
+            <div class="settings-field">
+              <label for="set-dl-parallel">Playlist / batch: simultaneous downloads</label>
+              <select id="set-dl-parallel">
+                <option value="1">1 (one at a time)</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="5">5</option>
+              </select>
+            </div>
+            <div class="settings-field">
+              <label for="set-dl-rate">Speed limit (MB/s, 0 = unlimited)</label>
+              <input type="number" id="set-dl-rate" min="0" max="500" step="0.5" value="0" />
+            </div>
+            <div class="settings-field settings-field--span2">
+              <label class="settings-check">
+                <input type="checkbox" id="set-aria2" />
+                Use aria2c (multi-connection download accelerator)
+              </label>
+              <p id="set-aria2-hint" class="settings-hint"></p>
+            </div>
+            <div class="settings-field">
+              <label for="set-aria2-x">aria2c connections per file</label>
+              <input type="number" id="set-aria2-x" min="1" max="32" step="1" value="16" />
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="settings-card settings-card--span2">
+          <legend>yt-dlp</legend>
+          <div class="settings-actions row">
+            <button type="button" class="ghost" id="btn-ytdlp" data-btn-icon="check">Check yt-dlp</button>
+            <button type="button" class="primary" id="btn-ytdlp-up" data-btn-icon="upgrade">Upgrade yt-dlp (pip)</button>
+          </div>
+          <pre id="ytdlp-out" class="settings-log"></pre>
+        </fieldset>
+      </div>
+    </section>
+  </main>
+
+  <div id="fs-browser" class="fs-browser-overlay" hidden aria-hidden="true">
+    <div class="fs-browser-dialog" role="dialog" aria-modal="true" aria-labelledby="fs-browser-title">
+      <div class="fs-browser-head">
+        <h2 id="fs-browser-title">Choose folder</h2>
+        <button type="button" class="ghost btn-icon-only" id="fs-browser-close" data-btn-icon="close" aria-label="Close"></button>
+      </div>
+      <div class="fs-browser-path-row">
+        <input type="text" id="fs-browser-path" spellcheck="false" autocomplete="off" />
+        <button type="button" class="ghost" id="fs-browser-go" data-btn-icon="search">Go</button>
+      </div>
+      <p class="status error fs-browser-err" id="fs-browser-err" hidden></p>
+      <div class="fs-browser-toolbar">
+        <div class="fs-browser-toolbar-nav">
+          <button type="button" class="ghost" id="fs-browser-up" title="Up">↑ Up</button>
+          <button type="button" class="ghost" id="fs-browser-new-btn" data-btn-icon="folder">New folder</button>
+          <button type="button" class="ghost btn-icon-only" id="fs-browser-refresh" data-btn-icon="refresh" title="Refresh"></button>
+          <label class="fs-browser-show-all-wrap"><input type="checkbox" id="fs-show-all-files" /> Show all files</label>
+          <label class="fs-browser-select-all">
+            <input type="checkbox" id="fs-browser-select-all" />
+            <span>Select all</span>
+          </label>
+        </div>
+        <div class="fs-browser-toolbar-sel" id="fs-browser-delete-actions">
+          <span class="fs-browser-selection-count" id="fs-browser-selection-count" hidden></span>
+          <div class="fs-browser-delete-phase" id="fs-browser-delete-pick">
+            <button type="button" class="ghost danger" id="fs-browser-delete-selected" data-btn-icon="delete" disabled>Delete selected</button>
+          </div>
+          <div class="fs-browser-delete-phase fs-browser-delete-confirm" id="fs-browser-delete-confirm" hidden>
+            <span class="fs-browser-delete-row-msg" id="fs-browser-delete-msg"></span>
+            <button type="button" class="ghost danger" id="fs-browser-delete-ok" data-btn-icon="delete">Delete</button>
+          </div>
+        </div>
+      </div>
+      <div class="fs-browser-subrow" id="fs-browser-mkdir-row" hidden>
+        <input type="text" id="fs-browser-mkdir-name" placeholder="Folder name" />
+        <button type="button" class="primary" id="fs-browser-mkdir-ok" data-btn-icon="folder">Create</button>
+      </div>
+      <ul class="fs-browser-list" id="fs-browser-list"></ul>
+      <div class="fs-browser-actions">
+        <button type="button" class="ghost" id="fs-browser-cancel">Cancel</button>
+        <button type="button" class="primary" id="fs-browser-pick" data-btn-icon="folder">Use this folder</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

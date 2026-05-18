@@ -1,0 +1,35 @@
+[project]
+name = "dlpulse-next"
+version = "2.0.0"
+description = "DLPulse Next — cross-platform desktop shell (pywebview) + yt-dlp + Chromecast"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "qrcode>=7.4",
+    "flask>=3.0.0",
+    "werkzeug>=3.0.0",
+    "pywebview>=5.0",
+    "yt-dlp>=2024.1.0",
+    "mutagen>=1.47.0",
+    "packaging>=23.0",
+    "pychromecast>=14.0.0",
+    "zeroconf>=0.132.0",
+    "imageio-ffmpeg>=0.5.1",
+]
+
+[project.optional-dependencies]
+# Linux: needs system WebKit/GTK (e.g. Arch `webkit2gtk`, `gobject-introspection-runtime`) then pip install.
+webview-gtk = ["PyGObject>=3.42"]
+# PyInstaller desktop bundles (see packaging/pyinstaller/ and .github/workflows).
+build = ["pyinstaller>=6.0"]
+
+[project.scripts]
+dlpulse-next = "dlpulse_next.__main__:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["dlpulse_next*"]

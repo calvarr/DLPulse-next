@@ -14,7 +14,12 @@ PKG = ROOT / "dlpulse_next"
 
 sys.path.insert(0, str(ROOT))
 
-from PyInstaller.utils.hooks import collect_all, collect_data_files, collect_submodules
+from PyInstaller.utils.hooks import (
+    collect_all,
+    collect_data_files,
+    collect_dynamic_libs,
+    collect_submodules,
+)
 
 ff_datas, ff_binaries, ff_hidden = collect_all("imageio_ffmpeg")
 
@@ -60,10 +65,42 @@ if sys.platform.startswith("linux"):
     except Exception:
         pass
 
-_runtime_hooks = []
+_hookspath: list[str] = []
+try:
+    import webview as _webview_pkg
+
+    _hookspath.append(str(Path(_webview_pkg.__file__).resolve().parent / "__pyinstaller"))
+except Exception:
+    pass
+
+_runtime_hooks: list[str] = []
 if sys.platform.startswith("linux"):
     _runtime_hooks.append(str(SPECDIR / "rthook_gstreamer.py"))
     _runtime_hooks.append(str(SPECDIR / "rthook_gtk.py"))
+elif sys.platform == "win32":
+    _runtime_hooks.append(str(SPECDIR / "rthook_windows.py"))
+    for _mod in ("pythonnet", "clr_loader"):
+        try:
+            _d, _b, _h = collect_all(_mod)
+            _datas += _d
+            _binaries += _b
+            _hidden += _h
+        except Exception:
+            pass
+    try:
+        _datas += collect_data_files("webview", subdir="lib")
+        _datas += collect_data_files("webview", subdir="js")
+        _binaries += collect_dynamic_libs("webview")
+    except Exception:
+        pass
+    _hidden += [
+        "clr",
+        "pythonnet",
+        "clr_loader",
+        "clr_loader.ffi",
+        "clr_loader.util",
+        "clr_loader.util.coreclr_errors",
+    ]
 
 _hidden += collect_submodules("yt_dlp")
 _hidden += [
@@ -107,7 +144,7 @@ a = Analysis(
     binaries=_binaries,
     datas=_datas,
     hiddenimports=_hidden,
-    hookspath=[],
+    hookspath=_hookspath,
     hooksconfig={},
     runtime_hooks=_runtime_hooks,
     excludes=["tkinter", "matplotlib", "numpy", "pandas", "PIL", "IPython", "pytest"],

@@ -76,6 +76,12 @@ jobs:
           python -m pip install --upgrade pip wheel setuptools
           pip install -e ".[build]"
 
+      - name: Verify pywebview + pythonnet (Windows)
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          python -c "import clr; import webview; print('pythonnet:', clr.__name__); print('webview:', webview.__file__)"
+
       - name: Verify imageio-ffmpeg binary
         run: |
           python -c "import imageio_ffmpeg as i; print('ffmpeg:', i.get_ffmpeg_exe())"

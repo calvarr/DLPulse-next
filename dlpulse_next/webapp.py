@@ -1413,9 +1413,12 @@ def run_desktop() -> None:
     from webview.errors import WebViewException
     from werkzeug.serving import make_server
 
+    from dlpulse_next.packaged_runtime import is_frozen, show_fatal_error
+
     atexit.register(terminate_external_players)
 
-    logging.basicConfig(level=logging.INFO)
+    if not logging.getLogger().handlers:
+        logging.basicConfig(level=logging.INFO)
     bump_app_launch_count()
     if sys.platform == "linux":
         from dlpulse_next.linux_packaged import apply_packaged_defaults
@@ -1432,25 +1435,45 @@ def run_desktop() -> None:
 
     icon = window_icon_path()
     start_kw = {"icon": icon} if icon else {}
+
+    def _browser_fallback(reason: str) -> None:
+        _log.warning("Native WebView unavailable (%s). Falling back to browser at %s", reason, url)
+        webbrowser.open(url)
+        if sys.platform == "win32" or is_frozen():
+            log_dir = "%LOCALAPPDATA%\\DLPulseNext\\logs" if sys.platform == "win32" else "~/.local/state/dlpulse-next/logs"
+            show_fatal_error(
+                "DLPulse Next",
+                "The native window could not start.\n\n"
+                f"Reason: {reason}\n\n"
+                f"Opened in your default browser:\n{url}\n\n"
+                "On Windows, install Microsoft Edge WebView2 Runtime if needed.\n"
+                f"Log files: {log_dir}",
+            )
+            threading.Event().wait()
+            return
+        print(
+            "\n  DLPulse Next — native window unavailable for pywebview.\n"
+            f"  Opened in your browser: {url}\n"
+            "  (On Linux: install webkit2gtk + PyGObject, then "
+            '`pip install -e ".[webview-gtk]"` — see README.)\n\n'
+            "  Press Enter here to stop the server (or close this terminal with Ctrl+C).\n",
+            flush=True,
+        )
+        try:
+            input("  … ")
+        except EOFError:
+            threading.Event().wait()
+
     try:
         webview.create_window("DLPulse", url, width=1680, height=1020, resizable=True)
         try:
             webview.start(**start_kw)
-        except WebViewException as ex:
-            _log.warning("Native WebView unavailable (%s). Falling back to the default browser.", ex)
-            webbrowser.open(url)
-            print(
-                "\n  DLPulse Next — native GTK/Qt bindings are missing for pywebview.\n"
-                f"  Opened in your browser: {url}\n"
-                "  (On Arch/Manjaro: install webkit2gtk-4.1 + PyGObject, then "
-                "`pip install -e \".[webview-gtk]\"` — see README.)\n\n"
-                "  Press Enter here to stop the server (or close this terminal with Ctrl+C).\n",
-                flush=True,
-            )
-            try:
-                input("  … ")
-            except EOFError:
-                threading.Event().wait()
+        except (WebViewException, ImportError, OSError, RuntimeError) as ex:
+            _browser_fallback(str(ex))
+        except Exception as ex:
+            if sys.platform == "win32" or is_frozen():
+                _browser_fallback(str(ex))
+            raise
     finally:
         terminate_external_players()
         try:

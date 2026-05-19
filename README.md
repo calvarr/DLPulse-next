@@ -20,7 +20,16 @@ Download from **[GitHub Releases](https://github.com/calvarr/DLPulse-next/releas
 | **Windows** | `DLPulseNext-Setup.exe` | Bundles yt-dlp, ffmpeg, aria2c, WebView2 UI |
 | **macOS** | `DLPulseNext.dmg` | Bundles yt-dlp, ffmpeg, aria2c, WKWebView UI |
 
-**Windows:** run the installer, then launch from the Start menu.
+**Windows:** run the installer, then launch from the Start menu. Requires **Microsoft Edge WebView2 Runtime** (usually preinstalled on Windows 10/11).
+
+**Windows — app does nothing / no window?**
+
+1. Right-click `DLPulseNext-Setup.exe` → **Properties** → if you see **Unblock**, check it and apply (SmartScreen/download block).
+2. Install [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) if missing.
+3. Check logs: `%LOCALAPPDATA%\DLPulseNext\logs\startup.log` and `crash.log`.
+4. Run from PowerShell for a visible error (debug build from source):  
+   `$env:DLPULSE_DEBUG=1; & "${env:ProgramFiles}\DLPulse Next\DLPulseNext.exe"`
+5. If the native window still fails, a newer build may open the UI in your default browser and show a message with the local URL.
 
 **macOS:** open the DMG, drag the app to Applications. If macOS blocks the unsigned build: **System Settings → Privacy & Security → Open Anyway**.
 

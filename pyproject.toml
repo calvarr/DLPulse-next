@@ -24,6 +24,7 @@ webview-gtk = ["PyGObject>=3.42,<3.49"]
 # PyInstaller desktop bundles (see packaging/pyinstaller/ and .github/workflows).
 build = [
     "pyinstaller>=6.0",
+    "pythonnet>=3.0.3; sys_platform == 'win32'",
     "PyGObject>=3.42,<3.49; sys_platform == 'linux'",
 ]
 

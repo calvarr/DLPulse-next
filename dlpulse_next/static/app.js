@@ -841,6 +841,23 @@ async function loadSettingsUi() {
   $("set-theme").value = th;
   applyTheme(th);
   playbackMode = (s.playback_mode || "internal").toLowerCase();
+  const modeHint = $("set-mode-hint");
+  if (modeHint && s.linux_runtime?.packaged) {
+    const lr = s.linux_runtime;
+    if (!lr.in_app_video) {
+      modeHint.textContent =
+        "Linux AppImage: in-app video needs GStreamer (gst-plugins-base/good) or use External player with mpv (recommended).";
+      if (playbackMode === "internal" && lr.recommended_playback === "external") {
+        modeHint.textContent +=
+          " Playback was set to External player automatically.";
+      }
+    } else {
+      modeHint.textContent =
+        "Linux AppImage: system WebKit + GStreamer detected; in-app player should work.";
+    }
+  } else if (modeHint) {
+    modeHint.textContent = "";
+  }
 }
 
 const DEFAULT_RELEASES_URL = "https://github.com/calvarr/DLPulse-next/releases";

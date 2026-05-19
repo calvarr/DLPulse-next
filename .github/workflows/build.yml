@@ -255,7 +255,7 @@ jobs:
             | Windows | `DLPulseNext-Setup.exe` |
             | macOS | `DLPulseNext.dmg` |
 
-            **Linux:** install **WebKit2GTK + GTK3** on your system for the native window (see README). AppImage bundles yt-dlp, ffmpeg, and aria2c only.
+            **Linux:** install **GTK3 + WebKit2GTK + mpv** (see README). AppImage bundles yt-dlp, ffmpeg, and aria2c only; library playback uses **mpv** by default when GStreamer is unavailable.
 
             For a **stable** versioned release, push a tag `v*` (e.g. `v2.0.1`).
           prerelease: true

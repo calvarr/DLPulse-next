@@ -13,45 +13,50 @@ Download the latest builds from **[GitHub Releases](https://github.com/calvarr/D
 | **Continuous** (latest `main`) | [dlpulse-next-continuous](https://github.com/calvarr/DLPulse-next/releases/tag/dlpulse-next-continuous) | Bleeding edge; app header shows Git commit |
 | **Stable** (tagged) | [All releases](https://github.com/calvarr/DLPulse-next/releases) | Versioned builds (`v2.0.0`, …); header shows release tag |
 
-Each bundle includes **yt-dlp**, **ffmpeg**, **aria2c**, and the full UI. On **Linux**, the native window also requires **system GTK3 + WebKit2GTK** (see below).
+| Platform | Bundled in installer | From your distro |
+|----------|----------------------|------------------|
+| **Linux AppImage** | yt-dlp, ffmpeg, aria2c, UI | GTK3, WebKit2GTK, **mpv** (recommended) or GStreamer for in-app video |
+| **Windows** | yt-dlp, ffmpeg, aria2c, WebView2 UI | — |
+| **macOS** | yt-dlp, ffmpeg, aria2c, WKWebView UI | — |
 
 ### Linux — AppImage
 
-1. **Install WebKitGTK and GTK3** (required for the native window):
+The AppImage is **not** a fully self-contained browser. It uses your desktop’s GTK/WebKit stack (like other Linux apps). That keeps one build working across distros without shipping Ubuntu libraries that break on Arch.
+
+**1. Install dependencies**
 
 ```bash
-# Arch / Manjaro (native window + in-app video playback)
-sudo pacman -S gtk3 webkit2gtk-4.1 gobject-introspection-runtime \
-  gstreamer gst-plugins-base gst-plugins-good
+# Arch / Manjaro — recommended (native window + library playback via mpv)
+sudo pacman -S gtk3 webkit2gtk-4.1 gobject-introspection-runtime mpv
 
-# Debian / Ubuntu (22.04 — WebKit 4.0)
-sudo apt install libgtk-3-0 libwebkit2gtk-4.0-37 gir1.2-webkit2-4.0 gobject-introspection \
-  gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+# Optional: in-app <video> player instead of mpv
+sudo pacman -S gstreamer gst-plugins-base gst-plugins-good
 
-# Debian / Ubuntu (24.04+ — WebKit 4.1)
-sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0 gir1.2-webkit2-4.1 gobject-introspection \
-  gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+# Debian / Ubuntu 24.04+
+sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0 gir1.2-webkit2-4.1 gobject-introspection mpv
+
+# Optional in-app player
+sudo apt install gstreamer1.0-plugins-base gstreamer1.0-plugins-good
 
 # Fedora
-sudo dnf install gtk3 webkit2gtk4.1
+sudo dnf install gtk3 webkit2gtk4.1 mpv
 
 # openSUSE
-sudo zypper install gtk3 webkit2gtk3
+sudo zypper install gtk3 webkit2gtk3 mpv
 ```
 
-2. Download **`DLPulseNext-x86_64.AppImage`** from the [continuous release](https://github.com/calvarr/DLPulse-next/releases/tag/dlpulse-next-continuous) (or a stable tag).
-3. Make it executable and run:
+Check: `bash packaging/linux/check-deps.sh` (from a git checkout) or `gst-inspect-1.0 autoaudiosink` for in-app video.
+
+**2. Run**
 
 ```bash
 chmod +x DLPulseNext-x86_64.AppImage
 ./DLPulseNext-x86_64.AppImage
 ```
 
-**Native window:** uses your system's WebKitGTK/GTK — not bundled in the AppImage. If WebKit is missing or incompatible, the app falls back to your default browser.
-
-**Video in the built-in player** needs GStreamer plugins (`gst-plugins-base`, `gst-plugins-good` on Arch). Without them you may see `autoaudiosink not found` when playing library files. The AppImage disables the WebKit subprocess sandbox so GStreamer can load plugins from `/usr/lib` (required for media; slightly weaker isolation than a browser tab).
-
-Optional: integrate with your desktop (AppImageLauncher, or move the file to `~/Applications` / `/opt` and add a `.desktop` entry).
+- **Native window** needs GTK3 + WebKit2GTK. Otherwise the app opens in your default browser.
+- **Library playback** defaults to **External player** (mpv) when GStreamer is missing or unusable in the AppImage. Change under **Settings → Default UI mode**.
+- Full dependency notes: [packaging/linux/linux-dependencies.md](packaging/linux/linux-dependencies.md)
 
 ### Windows — installer
 

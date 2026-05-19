@@ -528,23 +528,26 @@ def create_app() -> Flask:
     def api_settings_get():
         root = get_downloads_dir()
         aria2_on = get_use_aria2c()
-        return jsonify(
-            {
-                "ok": True,
-                "download_dir": str(root),
-                "video_player": get_video_player_command(),
-                "audio_player": get_audio_player_command(),
-                "playback_mode": get_playback_mode(),
-                "cast_discovery_wait_s": get_cast_discovery_wait_s(),
-                "ui_theme": get_ui_theme(),
-                "download_parallel": get_download_parallel(),
-                "use_aria2c": aria2_on,
-                "aria2c_connections": get_aria2c_connections(),
-                "aria2c_available": aria2c_available(),
-                "aria2c_bundled": aria2c_is_bundled(),
-                "download_rate_limit_mbps": get_download_rate_limit_mbps(),
-            }
-        )
+        payload: dict = {
+            "ok": True,
+            "download_dir": str(root),
+            "video_player": get_video_player_command(),
+            "audio_player": get_audio_player_command(),
+            "playback_mode": get_playback_mode(),
+            "cast_discovery_wait_s": get_cast_discovery_wait_s(),
+            "ui_theme": get_ui_theme(),
+            "download_parallel": get_download_parallel(),
+            "use_aria2c": aria2_on,
+            "aria2c_connections": get_aria2c_connections(),
+            "aria2c_available": aria2c_available(),
+            "aria2c_bundled": aria2c_is_bundled(),
+            "download_rate_limit_mbps": get_download_rate_limit_mbps(),
+        }
+        if sys.platform == "linux":
+            from dlpulse_next.linux_packaged import runtime_info
+
+            payload["linux_runtime"] = runtime_info()
+        return jsonify(payload)
 
     @app.post("/api/settings")
     def api_settings_post():
@@ -1414,6 +1417,10 @@ def run_desktop() -> None:
 
     logging.basicConfig(level=logging.INFO)
     bump_app_launch_count()
+    if sys.platform == "linux":
+        from dlpulse_next.linux_packaged import apply_packaged_defaults
+
+        apply_packaged_defaults()
 
     app = create_app()
     srv = make_server("127.0.0.1", 0, app, threaded=True)

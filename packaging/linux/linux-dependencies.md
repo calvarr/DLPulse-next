@@ -1,45 +1,35 @@
-# Linux dependencies (AppImage)
+# Linux dependencies
 
-The AppImage bundles **yt-dlp**, **ffmpeg**, **aria2c**, and the Python UI only.
+DLPulse Next on Linux is installed **from source** with pip. System packages provide GTK, WebKit, and GStreamer — the same stack as running from a normal Python venv.
 
-Everything else comes from your distribution.
+## Required
 
-## Required (native window)
+| Component | Purpose |
+|-----------|---------|
+| Python 3.11+ | Runtime |
+| PyGObject (`python-gobject`, `gir1.2-*`) | GTK / WebKit bindings |
+| GTK 3 | Native window |
+| WebKit2GTK 4.0 or 4.1 | Embedded browser (pywebview) |
 
-| Component | Arch / Manjaro | Debian / Ubuntu 24.04+ |
-|-----------|----------------|-------------------------|
-| GTK 3 | `gtk3` | `libgtk-3-0` |
-| WebKitGTK | `webkit2gtk-4.1` | `libwebkit2gtk-4.1-0`, `gir1.2-webkit2-4.1` |
-| GObject Introspection | `gobject-introspection-runtime` | `gobject-introspection` |
+## Recommended
 
-Without these, the app opens in your default browser instead of a native window.
+| Component | Purpose |
+|-----------|---------|
+| GStreamer (`gstreamer`, `plugins-base`, `plugins-good`) | In-app library playback (`<video>`) |
+| mpv | External player (Settings → External player) |
+| ffmpeg | Heavy mux/remux (pip also ships a copy via imageio-ffmpeg) |
+| aria2 | Parallel downloads in Settings |
 
-## Recommended (library playback)
-
-**Option A — external player (default on AppImage when GStreamer is missing)**
-
-| Tool | Arch | Debian / Ubuntu |
-|------|------|-----------------|
-| mpv | `mpv` | `mpv` |
-
-Set **Settings → Default UI mode → External player**, or leave the automatic default.
-
-**Option B — in-app `<video>` player (WebKit + GStreamer)**
-
-| Component | Arch | Debian / Ubuntu |
-|-----------|------|-----------------|
-| GStreamer | `gstreamer` | `gstreamer1.0-tools` |
-| Base plugins | `gst-plugins-base` | `gstreamer1.0-plugins-base` |
-| Good plugins | `gst-plugins-good` | `gstreamer1.0-plugins-good` |
-
-Verify: `gst-inspect-1.0 autoaudiosink`
-
-## Check your system
+## Check installation
 
 ```bash
 bash packaging/linux/check-deps.sh
 ```
 
-## Why not bundle WebKit/GStreamer?
+## Per-distro commands
 
-Bundling Ubuntu WebKit/GStreamer into the AppImage breaks on Arch, Fedora, and rolling distros (EGL, `libmount`, GStreamer registry, sandbox). Using the host stack matches how Chrome/Firefox are packaged on Linux and is the only practical way to support many distributions with one build.
+See the main [README.md](../../README.md#linux-install-from-source) for copy-paste install blocks (Arch, Debian/Ubuntu, Fedora, openSUSE).
+
+## Why no AppImage?
+
+Bundling WebKit/GStreamer from Ubuntu into an AppImage breaks on Arch, Fedora, and other rolling distros (EGL, GLib, GStreamer registry, sandbox). Installing on the host matches how other GTK apps are distributed and avoids those failures.

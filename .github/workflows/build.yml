@@ -1,6 +1,6 @@
 # Build DLPulse Next — Linux / Windows / macOS (PyInstaller)
 #
-# Outputs: AppImage (Linux), NSIS installer (Windows), DMG (macOS).
+# Outputs: NSIS installer (Windows), DMG (macOS). Linux: install from source (see README).
 # Bundles: yt-dlp, ffmpeg (imageio-ffmpeg), aria2c, Flask UI, pywebview.
 # Triggers: push to main/master, tags v*, manual workflow_dispatch.
 # Releases: v* tags → stable release; main/master → prerelease dlpulse-next-continuous.
@@ -27,10 +27,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
-            target: linux
-            artifact_name: dlpulse-next-linux
-            artifact_file: build/DLPulseNext-x86_64.AppImage
           - os: windows-latest
             target: windows
             artifact_name: dlpulse-next-windows
@@ -50,28 +46,6 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-
-      - name: Linux — GTK / WebKit (PyInstaller build only)
-        if: matrix.target == 'linux'
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            build-essential python3-dev pkg-config \
-            libgtk-3-0 libgtk-3-dev \
-            libwebkit2gtk-4.0-37 libwebkit2gtk-4.0-dev \
-            gir1.2-webkit2-4.0 gir1.2-gtk-3.0 \
-            libgirepository1.0-dev gobject-introspection \
-            fuse libfuse2 file
-
-      - name: Install appimagetool (Linux)
-        if: matrix.target == 'linux'
-        shell: bash
-        run: |
-          set -e
-          curl -fsSL -o /tmp/appimagetool \
-            "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
-          chmod +x /tmp/appimagetool
-          sudo mv /tmp/appimagetool /usr/local/bin/appimagetool
 
       - name: Install NSIS (Windows)
         if: matrix.target == 'windows'
@@ -115,17 +89,6 @@ jobs:
         shell: bash
         run: printf '%s\n' "${GITHUB_REF_NAME}" > dlpulse_next/build_version.txt
 
-      - name: Stage aria2c for bundle (Linux)
-        if: matrix.target == 'linux'
-        shell: bash
-        run: |
-          set -e
-          sudo apt-get install -y --no-install-recommends aria2
-          mkdir -p packaging/binaries
-          cp "$(command -v aria2c)" packaging/binaries/aria2c
-          chmod +x packaging/binaries/aria2c
-          packaging/binaries/aria2c --version | head -1
-
       - name: Stage aria2c for bundle (macOS)
         if: matrix.target == 'macos'
         shell: bash
@@ -161,11 +124,6 @@ jobs:
           PYTHONUTF8: "1"
           PYTHONIOENCODING: utf-8
         run: pyinstaller packaging/pyinstaller/dlpulse_next.spec
-
-      - name: Build AppImage (Linux)
-        if: matrix.target == 'linux'
-        shell: bash
-        run: bash packaging/linux/make_appimage.sh .
 
       - name: Build Windows installer
         if: matrix.target == 'windows'
@@ -213,14 +171,14 @@ jobs:
           shopt -s nullglob
           for f in artifacts/* artifacts/**/*; do
             case "$f" in
-              *.AppImage|*.exe|*.dmg) cp -f "$f" release-assets/ ;;
+              *.exe|*.dmg) cp -f "$f" release-assets/ ;;
             esac
           done
           ls -la release-assets/
 
       - name: Verify release assets
         run: |
-          test "$(find release-assets -type f \( -name '*.AppImage' -o -name '*.exe' -o -name '*.dmg' \) | wc -l)" -ge 1
+          test "$(find release-assets -type f \( -name '*.exe' -o -name '*.dmg' \) | wc -l)" -ge 2
 
       - name: Move continuous tag (main/master)
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
@@ -251,11 +209,10 @@ jobs:
             ### Downloads (yt-dlp, ffmpeg, aria2c bundled)
             | Platform | File |
             |----------|------|
-            | Linux | `DLPulseNext-x86_64.AppImage` |
             | Windows | `DLPulseNext-Setup.exe` |
             | macOS | `DLPulseNext.dmg` |
 
-            **Linux:** install **GTK3 + WebKit2GTK + mpv** (see README). AppImage bundles yt-dlp, ffmpeg, and aria2c only; library playback uses **mpv** by default when GStreamer is unavailable.
+            **Linux:** install from source — see [README](https://github.com/calvarr/DLPulse-next#linux-install-from-source) (system GTK/WebKit/GStreamer + `pip install -e ".[webview-gtk]"`).
 
             For a **stable** versioned release, push a tag `v*` (e.g. `v2.0.1`).
           prerelease: true

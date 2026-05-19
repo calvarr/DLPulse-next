@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Build AppImage from PyInstaller onedir: dist/DLPulseNext/
-# Native window uses system GTK3 + WebKit2GTK (see README — not bundled).
+# UNMAINTAINED — Linux installs from source (see README). Kept for optional experiments.
+# Native window uses system GTK3 + WebKit2GTK (not bundled).
 # Usage: bash packaging/linux/make_appimage.sh [repo_root]
 set -euo pipefail
 ROOT="$(cd "${1:-.}" && pwd)"

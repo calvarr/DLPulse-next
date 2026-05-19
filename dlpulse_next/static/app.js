@@ -846,14 +846,9 @@ async function loadSettingsUi() {
     const lr = s.linux_runtime;
     if (!lr.in_app_video) {
       modeHint.textContent =
-        "Linux AppImage: in-app video needs GStreamer (gst-plugins-base/good) or use External player with mpv (recommended).";
-      if (playbackMode === "internal" && lr.recommended_playback === "external") {
-        modeHint.textContent +=
-          " Playback was set to External player automatically.";
-      }
+        "In-app video needs GStreamer (gst-plugins-base/good) or use External player with mpv.";
     } else {
-      modeHint.textContent =
-        "Linux AppImage: system WebKit + GStreamer detected; in-app player should work.";
+      modeHint.textContent = "";
     }
   } else if (modeHint) {
     modeHint.textContent = "";

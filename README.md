@@ -4,114 +4,180 @@ Cross-platform desktop app for downloading and playing media with **yt-dlp** —
 
 Part of the [DLPulse](https://calvarr.github.io/) ecosystem. Desktop rebuild **without Flet** — playback uses HTML5 `<video>` and the same local HTTP relay as the original app.
 
-## Install (pre-built)
+## Install
 
-Download the latest builds from **[GitHub Releases](https://github.com/calvarr/DLPulse-next/releases)**.
+### Pre-built installers (Windows & macOS)
 
-| Channel | Link | When to use |
-|---------|------|-------------|
-| **Continuous** (latest `main`) | [dlpulse-next-continuous](https://github.com/calvarr/DLPulse-next/releases/tag/dlpulse-next-continuous) | Bleeding edge; app header shows Git commit |
-| **Stable** (tagged) | [All releases](https://github.com/calvarr/DLPulse-next/releases) | Versioned builds (`v2.0.0`, …); header shows release tag |
+Download from **[GitHub Releases](https://github.com/calvarr/DLPulse-next/releases)**.
 
-| Platform | Bundled in installer | From your distro |
-|----------|----------------------|------------------|
-| **Linux AppImage** | yt-dlp, ffmpeg, aria2c, UI | GTK3, WebKit2GTK, **mpv** (recommended) or GStreamer for in-app video |
-| **Windows** | yt-dlp, ffmpeg, aria2c, WebView2 UI | — |
-| **macOS** | yt-dlp, ffmpeg, aria2c, WKWebView UI | — |
+| Channel | Link |
+|---------|------|
+| **Continuous** (latest `main`) | [dlpulse-next-continuous](https://github.com/calvarr/DLPulse-next/releases/tag/dlpulse-next-continuous) |
+| **Stable** (tagged) | [All releases](https://github.com/calvarr/DLPulse-next/releases) |
 
-### Linux — AppImage
+| Platform | File | Notes |
+|----------|------|--------|
+| **Windows** | `DLPulseNext-Setup.exe` | Bundles yt-dlp, ffmpeg, aria2c, WebView2 UI |
+| **macOS** | `DLPulseNext.dmg` | Bundles yt-dlp, ffmpeg, aria2c, WKWebView UI |
 
-The AppImage is **not** a fully self-contained browser. It uses your desktop’s GTK/WebKit stack (like other Linux apps). That keeps one build working across distros without shipping Ubuntu libraries that break on Arch.
+**Windows:** run the installer, then launch from the Start menu.
 
-**1. Install dependencies**
+**macOS:** open the DMG, drag the app to Applications. If macOS blocks the unsigned build: **System Settings → Privacy & Security → Open Anyway**.
 
-```bash
-# Arch / Manjaro — recommended (native window + library playback via mpv)
-sudo pacman -S gtk3 webkit2gtk-4.1 gobject-introspection-runtime mpv
+---
 
-# Optional: in-app <video> player instead of mpv
-sudo pacman -S gstreamer gst-plugins-base gst-plugins-good
+### Linux (install from source)
 
-# Debian / Ubuntu 24.04+
-sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0 gir1.2-webkit2-4.1 gobject-introspection mpv
+There is **no Linux AppImage** — GTK/WebKit/GStreamer depend on your distro and work best when installed like a normal desktop app.
 
-# Optional in-app player
-sudo apt install gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+**Requirements:** Python **3.11+**, pip, and the system packages below.
 
-# Fedora
-sudo dnf install gtk3 webkit2gtk4.1 mpv
+#### 1. System dependencies
 
-# openSUSE
-sudo zypper install gtk3 webkit2gtk3 mpv
-```
+Pick **one** block for your distribution.
 
-Check: `bash packaging/linux/check-deps.sh` (from a git checkout) or `gst-inspect-1.0 autoaudiosink` for in-app video.
-
-**2. Run**
+**Arch Linux / Manjaro / EndeavourOS**
 
 ```bash
-chmod +x DLPulseNext-x86_64.AppImage
-./DLPulseNext-x86_64.AppImage
+sudo pacman -S --needed \
+  python python-pip python-gobject \
+  gtk3 webkit2gtk-4.1 gobject-introspection-runtime \
+  gstreamer gst-plugins-base gst-plugins-good \
+  mpv ffmpeg aria2
 ```
 
-- **Native window** needs GTK3 + WebKit2GTK. Otherwise the app opens in your default browser.
-- **Library playback** defaults to **External player** (mpv) when GStreamer is missing or unusable in the AppImage. Change under **Settings → Default UI mode**.
-- Full dependency notes: [packaging/linux/linux-dependencies.md](packaging/linux/linux-dependencies.md)
+**Debian 12 / Ubuntu 22.04** (WebKit **4.0**)
 
-### Windows — installer
+```bash
+sudo apt update
+sudo apt install -y \
+  python3 python3-pip python3-venv python3-gi python3-gi-cairo gir1.2-gtk-3.0 \
+  libgtk-3-0 libwebkit2gtk-4.0-37 gir1.2-webkit2-4.0 gobject-introspection \
+  gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+  mpv ffmpeg aria2
+```
 
-1. Download **`DLPulseNext-Setup.exe`** from [Releases](https://github.com/calvarr/DLPulse-next/releases/tag/dlpulse-next-continuous).
-2. Run the installer (installs under `Program Files\DLPulse Next`).
-3. Launch **DLPulse Next** from the Start menu or desktop shortcut.
+**Debian 13 / Ubuntu 24.04+** (WebKit **4.1**)
 
-To uninstall: **Settings → Apps** or **Add/Remove Programs**, or run `uninstall.exe` in the install folder.
+```bash
+sudo apt update
+sudo apt install -y \
+  python3 python3-pip python3-venv python3-gi python3-gi-cairo gir1.2-gtk-3.0 \
+  libgtk-3-0 libwebkit2gtk-4.1-0 gir1.2-webkit2-4.1 gobject-introspection \
+  gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+  mpv ffmpeg aria2
+```
 
-### macOS — DMG
+**Fedora**
 
-1. Download **`DLPulseNext.dmg`** from [Releases](https://github.com/calvarr/DLPulse-next/releases/tag/dlpulse-next-continuous).
-2. Open the DMG and drag **DLPulse Next** to **Applications**.
-3. On first launch, if macOS blocks the app: **System Settings → Privacy & Security → Open Anyway** (unsigned build from CI).
+```bash
+sudo dnf install -y \
+  python3 python3-pip python3-gobject \
+  gtk3 webkit2gtk4.1 \
+  gstreamer1-plugins-base gstreamer1-plugins-good \
+  mpv ffmpeg aria2
+```
 
-## Configuration
+**openSUSE Tumbleweed / Leap**
 
-Settings are stored under:
+```bash
+sudo zypper install -y \
+  python3 python3-pip python3-gobject \
+  gtk3 webkit2gtk3 \
+  gstreamer-plugins-base gstreamer-plugins-good \
+  mpv ffmpeg aria2
+```
 
-- Linux/macOS: `~/.config/dlpulse-next/settings.json`
-- Windows: `%APPDATA%\DLPulseNext\settings.json`
+| Package role | Why |
+|--------------|-----|
+| `gtk3`, `webkit2gtk` | Native window (pywebview) |
+| `python-gobject` / `gir1.2-*` | GTK/WebKit bindings |
+| `gstreamer` + `plugins-base` + `plugins-good` | In-app `<video>` playback |
+| `mpv` | External player (Settings → External player) |
+| `ffmpeg` | Mux/remux (also bundled via pip if missing) |
+| `aria2` | Optional parallel downloads (Settings) |
 
-Optional **cookies** for yt-dlp: place `cookies.txt` next to the bundled app data, or set `YT_COOKIES_FILE`.
+**Verify (optional):**
 
-## Run from source (development)
+```bash
+gst-inspect-1.0 autoaudiosink   # should print "Factory Details"
+python3 -c "import gi; gi.require_version('WebKit2','4.1'); from gi.repository import WebKit2"
+# On Ubuntu 22.04 use WebKit2 4.0 instead of 4.1 in the line above
+```
+
+From a git checkout: `bash packaging/linux/check-deps.sh`
+
+#### 2. Install DLPulse Next
 
 ```bash
 git clone https://github.com/calvarr/DLPulse-next.git
 cd DLPulse-next
 python3 -m venv .venv
-.venv/bin/pip install -e .
-.venv/bin/python -m dlpulse_next
+source .venv/bin/activate   # fish: source .venv/bin/activate.fish
+pip install -U pip wheel
+pip install -e ".[webview-gtk]"
 ```
 
-Or: `.venv/bin/dlpulse-next`
-
-**Linux dev — native window:** install GTK/WebKit system packages, then:
+#### 3. Run
 
 ```bash
-.venv/bin/pip install -e ".[webview-gtk]"
+dlpulse-next
+# or: python -m dlpulse_next
+```
+
+**Desktop shortcut (optional):**
+
+```bash
+mkdir -p ~/.local/share/applications
+cat > ~/.local/share/applications/dlpulse-next.desktop <<EOF
+[Desktop Entry]
+Type=Application
+Name=DLPulse Next
+Comment=Media downloader with Chromecast
+Exec=$HOME/DLPulse-next/.venv/bin/dlpulse-next
+Icon=applications-multimedia
+Terminal=false
+Categories=AudioVideo;Network;
+EOF
+# Edit Exec= if you cloned elsewhere
+update-desktop-database ~/.local/share/applications 2>/dev/null || true
+```
+
+More detail: [packaging/linux/linux-dependencies.md](packaging/linux/linux-dependencies.md)
+
+---
+
+## Configuration
+
+Settings: `~/.config/dlpulse-next/settings.json` (Linux/macOS) or `%APPDATA%\DLPulseNext\settings.json` (Windows).
+
+Optional **cookies** for yt-dlp: `cookies.txt` in the config folder, or set `YT_COOKIES_FILE`.
+
+## Development
+
+Same as Linux install; after `pip install -e ".[webview-gtk]"`:
+
+```bash
+.venv/bin/python -m dlpulse_next
 ```
 
 See [pywebview installation](https://pywebview.flowrl.com/guide/installation.html).
 
-## Build installers locally
+## Build installers locally (Windows / macOS)
 
-After `pip install -e ".[build]"` and PyInstaller (`packaging/pyinstaller/dlpulse_next.spec`):
+```bash
+pip install -e ".[build]"
+pyinstaller packaging/pyinstaller/dlpulse_next.spec
+```
 
 | Platform | Script | Output |
 |----------|--------|--------|
-| Linux | `bash packaging/linux/make_appimage.sh` | `build/DLPulseNext-x86_64.AppImage` |
-| Windows | `pwsh packaging/windows/build_installer.ps1` | `build/DLPulseNext-Setup.exe` (needs [NSIS](https://nsis.sourceforge.io/)) |
+| Windows | `pwsh packaging/windows/build_installer.ps1` | `build/DLPulseNext-Setup.exe` |
 | macOS | `bash packaging/macos/make_dmg.sh` | `build/DLPulseNext.dmg` |
 
-CI builds all three on push to `main` and on tags `v*` — see `.github/workflows/build.yml`.
+CI builds Windows and macOS on push to `main` and on tags `v*`. Linux is not packaged as AppImage (see **Linux** above).
+
+Legacy AppImage script (unmaintained): `bash packaging/linux/make_appimage.sh`
 
 ## Project layout
 

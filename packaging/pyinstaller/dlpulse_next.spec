@@ -84,27 +84,39 @@ if sys.platform.startswith("linux"):
     _runtime_hooks.append(str(SPECDIR / "rthook_gtk.py"))
 elif sys.platform == "win32":
     _runtime_hooks.append(str(SPECDIR / "rthook_windows.py"))
-    for _mod in ("pythonnet", "clr_loader"):
+    for _mod in ("pythonnet", "clr_loader", "clr"):
         try:
             _d, _b, _h = collect_all(_mod)
             _datas += _d
             _binaries += _b
             _hidden += _h
-        except Exception:
-            pass
+        except Exception as _e:
+            print(f"WARNING: collect_all({_mod}) failed: {_e}", file=sys.stderr)
+    try:
+        import pythonnet as _pn
+
+        _pn_root = Path(_pn.__file__).resolve().parent
+        _rt = _pn_root / "runtime"
+        if _rt.is_dir():
+            _datas.append((str(_rt), "pythonnet/runtime"))
+    except Exception as _e:
+        print(f"WARNING: pythonnet runtime collect failed: {_e}", file=sys.stderr)
     try:
         _datas += collect_data_files("webview", subdir="lib")
         _datas += collect_data_files("webview", subdir="js")
         _binaries += collect_dynamic_libs("webview")
-    except Exception:
-        pass
+    except Exception as _e:
+        print(f"WARNING: webview DLL collect failed: {_e}", file=sys.stderr)
     _hidden += [
         "clr",
         "pythonnet",
         "clr_loader",
         "clr_loader.ffi",
         "clr_loader.util",
+        "clr_loader.util.find",
         "clr_loader.util.coreclr_errors",
+        "clr_loader.hostfxr",
+        "clr_loader.netfx",
     ]
 
 _hidden += collect_submodules("yt_dlp")

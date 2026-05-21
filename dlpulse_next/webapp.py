@@ -1419,11 +1419,6 @@ def run_desktop() -> None:
     from dlpulse_next.packaged_runtime import is_frozen, show_fatal_error
     from dlpulse_next.settings_store import get_ui_launch_mode
 
-    if sys.platform == "win32":
-        from dlpulse_next.windows_pythonnet import configure_windows_pythonnet
-
-        configure_windows_pythonnet()
-
     atexit.register(terminate_external_players)
 
     if not logging.getLogger().handlers:
@@ -1463,8 +1458,9 @@ def run_desktop() -> None:
                     "The native window could not start.\n\n"
                     f"Reason: {reason}\n\n"
                     f"Opened in your default browser:\n{url}\n\n"
-                    "On Windows, install Microsoft Edge WebView2 Runtime and ensure "
-                    ".NET Desktop Runtime is available.\n"
+                    "On Windows, install WebView2 and .NET Desktop Runtime 6+ (x64):\n"
+                    "https://developer.microsoft.com/microsoft-edge/webview2/\n"
+                    "https://dotnet.microsoft.com/download/dotnet/8.0\n"
                     "You can choose “Web page” in Settings → Interface for future launches.\n"
                     "Before reinstalling, close this dialog and end DLPulseNext.exe in Task Manager.\n"
                     f"Log files: {log_dir}",
@@ -1495,6 +1491,15 @@ def run_desktop() -> None:
 
         import webview
         from webview.errors import WebViewException
+
+        if sys.platform == "win32":
+            try:
+                from dlpulse_next.windows_pythonnet import ensure_pythonnet_ready
+
+                ensure_pythonnet_ready()
+            except RuntimeError as ex:
+                _run_browser_only(reason=str(ex))
+                return
 
         webview.create_window("DLPulse", url, width=1680, height=1020, resizable=True)
         try:

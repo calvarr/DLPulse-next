@@ -49,7 +49,7 @@ Newer builds run ffmpeg without a visible console and stop it when you close the
 
 1. Right-click `DLPulseNext-Setup.exe` → **Properties** → if you see **Unblock**, check it and apply (SmartScreen/download block).
 2. Install [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) if missing.
-3. Install [.NET Desktop Runtime 6+](https://dotnet.microsoft.com/download/dotnet/6.0) if the native window fails with a `System.Windows.Forms` error.
+3. Install [.NET Desktop Runtime 6+](https://dotnet.microsoft.com/download/dotnet/8.0) (Windows Desktop x64) if the native window fails with `pythonnet`, `System.Windows.Forms`, or pywebview errors.
 4. Check logs: `%LOCALAPPDATA%\DLPulseNext\logs\startup.log` and `crash.log`.
 5. Run from PowerShell for a visible error (debug build from source):  
    `$env:DLPULSE_DEBUG=1; & "${env:ProgramFiles}\DLPulse Next\DLPulseNext.exe"`

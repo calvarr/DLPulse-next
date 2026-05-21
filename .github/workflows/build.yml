@@ -131,6 +131,18 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: pyinstaller packaging/pyinstaller/dlpulse_next.spec
 
+      - name: Verify pythonnet in Windows bundle
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $hits = Get-ChildItem -Path dist/DLPulseNext -Recurse -Filter 'Python.Runtime.dll' -ErrorAction SilentlyContinue
+          if (-not $hits) { throw 'Python.Runtime.dll missing from PyInstaller output (pythonnet not bundled)' }
+          $hits | Select-Object -First 3 | ForEach-Object { Write-Host $_.FullName }
+          $cfg = Get-ChildItem -Path dist/DLPulseNext -Recurse -Filter 'windows_runtimeconfig.json' -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $cfg) { throw 'windows_runtimeconfig.json missing from bundle' }
+          Write-Host "runtimeconfig: $($cfg.FullName)"
+
       - name: Build Windows installer
         if: matrix.target == 'windows'
         shell: pwsh

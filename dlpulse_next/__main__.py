@@ -13,10 +13,10 @@ def main() -> None:
     apply_windows_packaged_env()
     if sys.platform == "win32":
         from dlpulse_next.process_win import apply_ytdlp_hide_console
-        from dlpulse_next.windows_pythonnet import configure_windows_pythonnet
+        from dlpulse_next.windows_pythonnet import bootstrap_pythonnet
 
         apply_ytdlp_hide_console()
-        configure_windows_pythonnet()
+        bootstrap_pythonnet()
     setup_packaged_logging()
 
     try:

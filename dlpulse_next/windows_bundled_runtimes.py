@@ -24,7 +24,7 @@ def find_bundled_dotnet_root() -> Path | None:
     if base is None:
         return None
     for candidate in (base / "dotnet", base / "runtime" / "dotnet"):
-        if (candidate / "host").is_dir() and (candidate / "shared").is_dir():
+        if (candidate / "host" / "fxr").is_dir() and (candidate / "shared").is_dir():
             return candidate.resolve()
     return None
 

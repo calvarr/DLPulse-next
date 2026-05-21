@@ -131,6 +131,22 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: pyinstaller packaging/pyinstaller/dlpulse_next.spec
 
+      - name: Bundle ffmpeg into PyInstaller dist (Windows)
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: pwsh -NoProfile -File packaging/windows/bundle_ffmpeg_into_dist.ps1
+
+      - name: Verify ffmpeg in Windows bundle
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = Join-Path $PWD 'dist\DLPulseNext\ffmpeg.exe'
+          if (-not (Test-Path -LiteralPath $exe)) {
+            throw "ffmpeg.exe missing from dist\DLPulseNext (yt-dlp needs ffmpeg.exe next to the app)"
+          }
+          Write-Host "OK bundled ffmpeg: $exe"
+
       - name: Stage bundled WebView2 + .NET Desktop runtimes
         if: matrix.target == 'windows'
         shell: pwsh

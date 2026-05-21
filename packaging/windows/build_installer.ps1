@@ -10,6 +10,11 @@ try {
     }
     $source = (Resolve-Path -LiteralPath $source).Path
 
+    $bundleScript = Join-Path $Root "packaging\windows\bundle_ffmpeg_into_dist.ps1"
+    if (Test-Path $bundleScript) {
+        & $bundleScript $Root
+    }
+
     $candidates = @(
         "${env:ProgramFiles(x86)}\NSIS\makensis.exe",
         "$env:ProgramFiles\NSIS\makensis.exe",

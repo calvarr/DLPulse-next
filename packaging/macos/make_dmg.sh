@@ -17,6 +17,27 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp -a "$BUNDLE"/. "$APP/Contents/MacOS/"
 chmod +x "$APP/Contents/MacOS/DLPulseNext"
 
+# yt-dlp expects ffmpeg/ffprobe with standard names (imageio ships ffmpeg-* only).
+PY="${PYTHON:-python3}"
+BIN_DIR="$APP/Contents/Resources/bin"
+mkdir -p "$BIN_DIR"
+FFMPEG_EXE="$("$PY" -c "import imageio_ffmpeg as _i; print(_i.get_ffmpeg_exe())")"
+if [[ ! -f "$FFMPEG_EXE" ]]; then
+  echo "imageio_ffmpeg did not resolve ffmpeg (PYTHON=$PY)" >&2
+  exit 1
+fi
+cp -f "$FFMPEG_EXE" "$BIN_DIR/ffmpeg"
+chmod +x "$BIN_DIR/ffmpeg" || true
+IO_DIR="$(dirname "$FFMPEG_EXE")"
+if [[ -f "$IO_DIR/ffprobe" ]]; then
+  cp -f "$IO_DIR/ffprobe" "$BIN_DIR/ffprobe"
+  chmod +x "$BIN_DIR/ffprobe" || true
+elif command -v ffprobe &>/dev/null; then
+  cp -f "$(command -v ffprobe)" "$BIN_DIR/ffprobe"
+  chmod +x "$BIN_DIR/ffprobe" || true
+fi
+echo "Bundled ffmpeg into $BIN_DIR/ffmpeg"
+
 ICON="dlpulse_next/static/dlpulse_icon.png"
 if [[ -f "$ICON" ]]; then
   cp -f "$ICON" "$APP/Contents/Resources/dlpulse_icon.png"

@@ -20,18 +20,49 @@ function Get-RemoteFile([string]$Url, [string]$Dest) {
     Invoke-WebRequest -Uri $Url -OutFile $Dest -UseBasicParsing
 }
 
-# --- .NET Windows Desktop Runtime (portable; used via DOTNET_ROOT) ---
-$zipUrl = "https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/$DotNetVersion/windowsdesktop-runtime-$DotNetVersion-win-x64.zip"
-$zipPath = Join-Path $env:TEMP "windowsdesktop-runtime-$DotNetVersion-win-x64.zip"
-Get-RemoteFile $zipUrl $zipPath
-Expand-Archive -LiteralPath $zipPath -DestinationPath $DotNetDir -Force
-Remove-Item -Force $zipPath
+function Expand-DotnetZipInto([string]$ZipPath, [string]$DestDir) {
+    $extractTemp = Join-Path $env:TEMP ("dotnet-extract-" + [guid]::NewGuid().ToString("n"))
+    New-Item -ItemType Directory -Force -Path $extractTemp | Out-Null
+    try {
+        Expand-Archive -LiteralPath $ZipPath -DestinationPath $extractTemp -Force
+        $roots = @($extractTemp)
+        $roots += Get-ChildItem -Path $extractTemp -Directory -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName }
+        $picked = $roots | Where-Object {
+            (Test-Path (Join-Path $_ "host\fxr")) -or
+            (Test-Path (Join-Path $_ "shared"))
+        } | Sort-Object { $_.Length } | Select-Object -First 1
+        if (-not $picked) {
+            throw "No host/fxr or shared/ in extracted zip ($ZipPath)"
+        }
+        Get-ChildItem -LiteralPath $picked | Copy-Item -Destination $DestDir -Recurse -Force
+    }
+    finally {
+        if (Test-Path $extractTemp) { Remove-Item -Recurse -Force $extractTemp }
+    }
+}
+
+# CoreCLR host + Microsoft.NETCore.App (required for pythonnet / hostfxr).
+$coreZipUrl = "https://builds.dotnet.microsoft.com/dotnet/Runtime/$DotNetVersion/dotnet-runtime-$DotNetVersion-win-x64.zip"
+$coreZipPath = Join-Path $env:TEMP "dotnet-runtime-$DotNetVersion-win-x64.zip"
+Get-RemoteFile $coreZipUrl $coreZipPath
+Expand-DotnetZipInto $coreZipPath $DotNetDir
+Remove-Item -Force $coreZipPath
+
+# WinForms / WPF shared framework (windowsdesktop zip has no host/ — only shared/Microsoft.WindowsDesktop.App).
+$desktopZipUrl = "https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/$DotNetVersion/windowsdesktop-runtime-$DotNetVersion-win-x64.zip"
+$desktopZipPath = Join-Path $env:TEMP "windowsdesktop-runtime-$DotNetVersion-win-x64.zip"
+Get-RemoteFile $desktopZipUrl $desktopZipPath
+Expand-DotnetZipInto $desktopZipPath $DotNetDir
+Remove-Item -Force $desktopZipPath
 
 $installerUrl = "https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/$DotNetVersion/windowsdesktop-runtime-$DotNetVersion-win-x64.exe"
 Get-RemoteFile $installerUrl (Join-Path $Installers "windowsdesktop-runtime-$DotNetVersion-win-x64.exe")
 
 if (-not (Test-Path (Join-Path $DotNetDir "host\fxr"))) {
-    throw "Invalid dotnet layout under $DotNetDir"
+    throw "Invalid dotnet layout under $DotNetDir (missing host\fxr after merging runtime zips)"
+}
+if (-not (Test-Path (Join-Path $DotNetDir "shared\Microsoft.WindowsDesktop.App"))) {
+    throw "Invalid dotnet layout under $DotNetDir (missing Microsoft.WindowsDesktop.App)"
 }
 Write-Host "OK dotnet -> $DotNetDir"
 

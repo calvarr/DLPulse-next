@@ -1466,6 +1466,7 @@ def run_desktop() -> None:
                     "On Windows, install Microsoft Edge WebView2 Runtime and ensure "
                     ".NET Desktop Runtime is available.\n"
                     "You can choose “Web page” in Settings → Interface for future launches.\n"
+                    "Before reinstalling, close this dialog and end DLPulseNext.exe in Task Manager.\n"
                     f"Log files: {log_dir}",
                 )
             threading.Event().wait()

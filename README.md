@@ -32,7 +32,14 @@ Download from **[GitHub Releases](https://github.com/calvarr/DLPulse-next/releas
 | **Windows** | `DLPulseNext-Setup.exe` | Bundles yt-dlp, ffmpeg, aria2c, WebView2 UI |
 | **macOS** | `DLPulseNext.dmg` | Bundles yt-dlp, ffmpeg, aria2c, WKWebView UI |
 
-**Windows:** run the installer, then launch from the Start menu. Requires **Microsoft Edge WebView2 Runtime** (usually preinstalled on Windows 10/11).
+**Windows:** run the installer **as Administrator** (right-click → **Run as administrator**), then launch from the Start menu. Requires **Microsoft Edge WebView2 Runtime** (usually preinstalled on Windows 10/11).
+
+**Windows — installer “Error opening file for writing” on `DLPulseNext.exe`?**
+
+1. Close DLPulse Next completely (including any error dialog that opened the browser — the app may still run in the background).
+2. Open **Task Manager** → end **DLPulseNext.exe** (and **ffmpeg.exe** if launched from the app folder).
+3. Run `DLPulseNext-Setup.exe` again **as Administrator**.
+4. If it still fails, uninstall **DLPulse Next** from Settings → Apps, reboot, then install the latest setup from [Releases](https://github.com/calvarr/DLPulse-next/releases).
 
 **Windows — app does nothing / no window?**
 

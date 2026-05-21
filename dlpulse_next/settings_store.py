@@ -196,6 +196,26 @@ def set_ui_theme(theme: str) -> None:
     _write_settings(data)
 
 
+def get_ui_launch_mode() -> str:
+    """How the desktop shell opens on launch: native window or default browser."""
+    raw = _read_settings().get("ui_launch_mode")
+    mode = ("" if raw is None else str(raw)).strip().lower()
+    if mode in ("native", "browser"):
+        return mode
+    return "native"
+
+
+def set_ui_launch_mode(mode: str) -> None:
+    value = (mode or "").strip().lower()
+    if value not in ("native", "browser"):
+        value = "native"
+    data = _read_settings()
+    data["ui_launch_mode"] = value
+    if "download_dir" not in data:
+        data["download_dir"] = str(get_downloads_dir())
+    _write_settings(data)
+
+
 _YTDLP_CHECK_EVERY_N_LAUNCHES = 5
 _YTDLP_RECHECK_DAYS = 7
 

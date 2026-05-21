@@ -817,6 +817,10 @@ async function init() {
 async function loadSettingsUi() {
   const s = await api("/api/settings");
   $("set-dir").value = s.download_dir || "";
+  if ($("set-launch")) {
+    const lm = (s.ui_launch_mode || "native").toLowerCase();
+    $("set-launch").value = lm === "browser" ? "browser" : "native";
+  }
   $("set-vp").value = s.video_player || "";
   $("set-ap").value = s.audio_player || "";
   $("set-mode").value = s.playback_mode || "internal";
@@ -975,6 +979,7 @@ $("set-save").addEventListener("click", async () => {
       method: "POST",
       body: {
         download_dir: $("set-dir").value,
+        ui_launch_mode: $("set-launch")?.value || "native",
         video_player: $("set-vp").value,
         audio_player: $("set-ap").value,
         playback_mode: $("set-mode").value,

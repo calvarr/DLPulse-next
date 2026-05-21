@@ -35,6 +35,11 @@ _version = PKG / "build_version.txt"
 if _version.is_file():
     _datas.append((str(_version), "dlpulse_next"))
 
+if sys.platform == "win32":
+    _win_rt = SPECDIR / "windows_runtimeconfig.json"
+    if _win_rt.is_file():
+        _datas.append((str(_win_rt), "."))
+
 _binaries = list(ff_binaries)
 
 _hidden = list(ff_hidden)

@@ -211,6 +211,29 @@
       <p class="credits-footnote">
         If you maintain one of these projects: thank you. Bug reports and patches upstream help everyone.
       </p>
+      <details class="about-legal" style="margin-top:1rem">
+        <summary>Legal notice</summary>
+        <div class="about-legal-body">
+          <p>
+            <strong>DLPulse</strong> is open-source software intended solely for educational purposes,
+            technical research, and managing your personal media library.
+          </p>
+          <h3 class="about-legal-h">1. Nature of the software</h3>
+          <p>
+            DLPulse acts as an automated wrapper around third-party utilities (such as yt-dlp and ffmpeg).
+            The author does not host, distribute, or control copyrighted media. You alone are responsible for how you use data from public sources.
+          </p>
+          <h3 class="about-legal-h">2. Your responsibility</h3>
+          <ul>
+            <li><strong>Legal compliance</strong> — Copyright laws and platform terms of service (e.g. YouTube, SoundCloud).</li>
+            <li><strong>Private use</strong> — Personal offline/local storage only.</li>
+            <li><strong>No warranties</strong> — Provided “as is”; author not liable for third-party penalties.</li>
+          </ul>
+          <h3 class="about-legal-h">3. No affiliation</h3>
+          <p>Not affiliated with YouTube, SoundCloud, Google LLC, or other streaming platforms.</p>
+          <p class="about-legal-foot">If you do not agree, do not use, install, or distribute this software.</p>
+        </div>
+      </details>
     </section>
 
     <section class="panel" id="panel-about">
@@ -236,6 +259,34 @@
           <button type="button" class="ghost" id="about-open-releases" data-btn-icon="upgrade" style="margin-top:8px">Open releases (downloads)</button>
         </article>
       </div>
+      <details class="about-legal">
+        <summary>Legal notice</summary>
+        <div class="about-legal-body">
+          <p>
+            <strong>DLPulse</strong> is open-source software intended solely for educational purposes,
+            technical research, and managing your personal media library.
+          </p>
+          <h3 class="about-legal-h">1. Nature of the software</h3>
+          <p>
+            DLPulse acts as an automated wrapper around third-party utilities (such as yt-dlp and ffmpeg).
+            The author does not host, distribute, or control copyrighted media. The application interacts
+            only with publicly available sources on the internet; you alone are responsible for how you use that data.
+          </p>
+          <h3 class="about-legal-h">2. Your responsibility</h3>
+          <p>By using DLPulse, you accept that:</p>
+          <ul>
+            <li><strong>Legal compliance</strong> — You must follow copyright laws in your country and each platform’s terms of service (e.g. YouTube, SoundCloud).</li>
+            <li><strong>Private use</strong> — The software is for personal offline/local storage. Redistribution, commercial use, or infringement is your responsibility.</li>
+            <li><strong>No warranties</strong> — Provided “as is” without warranty. The author is not liable for account blocks, IP limits, or other penalties from third parties.</li>
+          </ul>
+          <h3 class="about-legal-h">3. No affiliation</h3>
+          <p>
+            DLPulse is not affiliated with, endorsed by, or sponsored by any streaming platform (e.g. YouTube, SoundCloud, Google LLC).
+            Product names and trademarks belong to their owners.
+          </p>
+          <p class="about-legal-foot">If you do not agree to these terms, do not use, install, or distribute this software.</p>
+        </div>
+      </details>
     </section>
 
     <section class="panel" id="panel-settings">
@@ -251,7 +302,15 @@
         <fieldset class="settings-card">
           <legend>Interface</legend>
           <div class="settings-field">
-            <label for="set-mode">Default UI mode</label>
+            <label for="set-launch">Open application as</label>
+            <select id="set-launch">
+              <option value="native">Native application (desktop window)</option>
+              <option value="browser">Web page (default browser)</option>
+            </select>
+            <p class="settings-hint">Applies on the next launch. Native mode uses a desktop window (WebView2 on Windows).</p>
+          </div>
+          <div class="settings-field">
+            <label for="set-mode">Playback</label>
             <select id="set-mode">
               <option value="internal">Internal</option>
               <option value="external">External player</option>

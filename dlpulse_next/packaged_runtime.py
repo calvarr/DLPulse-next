@@ -88,3 +88,9 @@ def apply_windows_packaged_env() -> None:
         if root not in path.split(os.pathsep):
             os.environ["PATH"] = root + os.pathsep + path
     os.environ.setdefault("PYTHONNET_RUNTIME", "coreclr")
+    try:
+        from dlpulse_next.windows_pythonnet import configure_windows_pythonnet
+
+        configure_windows_pythonnet()
+    except Exception:
+        pass

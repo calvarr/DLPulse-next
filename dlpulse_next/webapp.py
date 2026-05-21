@@ -65,6 +65,7 @@ from dlpulse_next.settings_store import (
     get_app_update_dismissed_key,
     get_github_update_dismissed_main_sha,
     get_playback_mode,
+    get_ui_launch_mode,
     get_ui_theme,
     get_use_aria2c,
     get_video_player_command,
@@ -77,6 +78,7 @@ from dlpulse_next.settings_store import (
     set_app_update_dismissed_key,
     set_github_update_dismissed_main_sha,
     set_playback_mode,
+    set_ui_launch_mode,
     set_ui_theme,
     set_use_aria2c,
     set_video_player_command,
@@ -536,6 +538,7 @@ def create_app() -> Flask:
             "playback_mode": get_playback_mode(),
             "cast_discovery_wait_s": get_cast_discovery_wait_s(),
             "ui_theme": get_ui_theme(),
+            "ui_launch_mode": get_ui_launch_mode(),
             "download_parallel": get_download_parallel(),
             "use_aria2c": aria2_on,
             "aria2c_connections": get_aria2c_connections(),
@@ -567,6 +570,8 @@ def create_app() -> Flask:
                 pass
         if "ui_theme" in data:
             set_ui_theme(str(data.get("ui_theme") or "dark"))
+        if "ui_launch_mode" in data:
+            set_ui_launch_mode(str(data.get("ui_launch_mode") or "native"))
         if "download_parallel" in data:
             try:
                 set_download_parallel(int(data["download_parallel"]))
@@ -1409,11 +1414,15 @@ def create_app() -> Flask:
 def run_desktop() -> None:
     import webbrowser
 
-    import webview
-    from webview.errors import WebViewException
     from werkzeug.serving import make_server
 
     from dlpulse_next.packaged_runtime import is_frozen, show_fatal_error
+    from dlpulse_next.settings_store import get_ui_launch_mode
+
+    if sys.platform == "win32":
+        from dlpulse_next.windows_pythonnet import configure_windows_pythonnet
+
+        configure_windows_pythonnet()
 
     atexit.register(terminate_external_players)
 
@@ -1436,27 +1445,40 @@ def run_desktop() -> None:
     icon = window_icon_path()
     start_kw = {"icon": icon} if icon else {}
 
-    def _browser_fallback(reason: str) -> None:
-        _log.warning("Native WebView unavailable (%s). Falling back to browser at %s", reason, url)
+    def _run_browser_only(*, reason: str | None = None) -> None:
+        if reason:
+            _log.info("Opening UI in browser (%s): %s", reason, url)
+        else:
+            _log.info("Opening UI in browser (Settings): %s", url)
         webbrowser.open(url)
         if sys.platform == "win32" or is_frozen():
-            log_dir = "%LOCALAPPDATA%\\DLPulseNext\\logs" if sys.platform == "win32" else "~/.local/state/dlpulse-next/logs"
-            show_fatal_error(
-                "DLPulse Next",
-                "The native window could not start.\n\n"
-                f"Reason: {reason}\n\n"
-                f"Opened in your default browser:\n{url}\n\n"
-                "On Windows, install Microsoft Edge WebView2 Runtime if needed.\n"
-                f"Log files: {log_dir}",
-            )
+            if reason and get_ui_launch_mode() == "native":
+                log_dir = (
+                    "%LOCALAPPDATA%\\DLPulseNext\\logs"
+                    if sys.platform == "win32"
+                    else "~/.local/state/dlpulse-next/logs"
+                )
+                show_fatal_error(
+                    "DLPulse Next",
+                    "The native window could not start.\n\n"
+                    f"Reason: {reason}\n\n"
+                    f"Opened in your default browser:\n{url}\n\n"
+                    "On Windows, install Microsoft Edge WebView2 Runtime and ensure "
+                    ".NET Desktop Runtime is available.\n"
+                    "You can choose “Web page” in Settings → Interface for future launches.\n"
+                    f"Log files: {log_dir}",
+                )
             threading.Event().wait()
             return
         print(
-            "\n  DLPulse Next — native window unavailable for pywebview.\n"
-            f"  Opened in your browser: {url}\n"
-            "  (On Linux: install webkit2gtk + PyGObject, then "
-            '`pip install -e ".[webview-gtk]"` — see README.)\n\n'
-            "  Press Enter here to stop the server (or close this terminal with Ctrl+C).\n",
+            "\n  DLPulse Next — UI in your browser.\n"
+            f"  {url}\n"
+            + (
+                f"  (Native window failed: {reason})\n"
+                if reason
+                else "  (Launch mode: web page — change in Settings → Interface.)\n"
+            )
+            + "\n  Press Enter here to stop the server (or close this terminal with Ctrl+C).\n",
             flush=True,
         )
         try:
@@ -1465,14 +1487,22 @@ def run_desktop() -> None:
             threading.Event().wait()
 
     try:
+        launch_mode = get_ui_launch_mode()
+        if launch_mode == "browser":
+            _run_browser_only()
+            return
+
+        import webview
+        from webview.errors import WebViewException
+
         webview.create_window("DLPulse", url, width=1680, height=1020, resizable=True)
         try:
             webview.start(**start_kw)
         except (WebViewException, ImportError, OSError, RuntimeError) as ex:
-            _browser_fallback(str(ex))
+            _run_browser_only(reason=str(ex))
         except Exception as ex:
             if sys.platform == "win32" or is_frozen():
-                _browser_fallback(str(ex))
+                _run_browser_only(reason=str(ex))
             raise
     finally:
         terminate_external_players()

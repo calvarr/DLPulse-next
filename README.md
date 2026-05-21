@@ -1,6 +1,18 @@
 # DLPulse Next
 
-Cross-platform desktop app for downloading and playing media with **yt-dlp** — YouTube & SoundCloud search, local library, built-in player, Chromecast, format presets. Native window via [pywebview](https://pywebview.flowrl.com/) + Flask UI.
+## Legal notice
+
+**DLPulse** is open-source software intended solely for educational purposes, technical research, and managing your personal media library.
+
+1. **Nature of the software** — DLPulse is an automated wrapper around third-party utilities (such as yt-dlp and ffmpeg). The author does not host, distribute, or control copyrighted media. The app interacts only with publicly available internet sources; you are solely responsible for how you use that data.
+2. **Your responsibility** — You must comply with copyright laws and each platform’s terms of service. The software is for personal offline/local storage; redistribution or commercial use is your responsibility. It is provided “as is” without warranty; the author is not liable for account blocks or other penalties from third parties.
+3. **No affiliation** — DLPulse is not affiliated with or sponsored by any streaming platform. Trademarks belong to their owners.
+
+If you do not agree, do not use, install, or distribute this software. Full text: [LEGAL.md](LEGAL.md).
+
+---
+
+Cross-platform desktop shell for **educational use** and personal media libraries — wraps **yt-dlp** and **ffmpeg** to resolve supported public URLs, manage a local archive, play media, and cast. Keyword/URL search depends on site extractors. Native window via [pywebview](https://pywebview.flowrl.com/) + Flask UI.
 
 Part of the [DLPulse](https://calvarr.github.io/) ecosystem. Desktop rebuild **without Flet** — playback uses HTML5 `<video>` and the same local HTTP relay as the original app.
 
@@ -26,10 +38,11 @@ Download from **[GitHub Releases](https://github.com/calvarr/DLPulse-next/releas
 
 1. Right-click `DLPulseNext-Setup.exe` → **Properties** → if you see **Unblock**, check it and apply (SmartScreen/download block).
 2. Install [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) if missing.
-3. Check logs: `%LOCALAPPDATA%\DLPulseNext\logs\startup.log` and `crash.log`.
-4. Run from PowerShell for a visible error (debug build from source):  
+3. Install [.NET Desktop Runtime 6+](https://dotnet.microsoft.com/download/dotnet/6.0) if the native window fails with a `System.Windows.Forms` error.
+4. Check logs: `%LOCALAPPDATA%\DLPulseNext\logs\startup.log` and `crash.log`.
+5. Run from PowerShell for a visible error (debug build from source):  
    `$env:DLPULSE_DEBUG=1; & "${env:ProgramFiles}\DLPulse Next\DLPulseNext.exe"`
-5. If the native window still fails, a newer build may open the UI in your default browser and show a message with the local URL.
+6. If the native window still fails, the app opens the UI in your default browser and shows a message with the local URL. In **Settings → Interface**, you can choose **Web page** to always use the browser, or **Native application** for a desktop window.
 
 **macOS:** open the DMG, drag the app to Applications. If macOS blocks the unsigned build: **System Settings → Privacy & Security → Open Anyway**.
 
@@ -158,7 +171,7 @@ More detail: [packaging/linux/linux-dependencies.md](packaging/linux/linux-depen
 
 ## Configuration
 
-Settings: `~/.config/dlpulse-next/settings.json` (Linux/macOS) or `%APPDATA%\DLPulseNext\settings.json` (Windows).
+Settings: `~/.config/dlpulse-next/settings.json` (Linux/macOS) or `%APPDATA%\DLPulseNext\settings.json` (Windows). Keys include `ui_launch_mode` (`native` | `browser`), `playback_mode`, download folder, and players.
 
 Optional **cookies** for yt-dlp: `cookies.txt` in the config folder, or set `YT_COOKIES_FILE`.
 

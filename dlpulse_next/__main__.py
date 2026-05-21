@@ -11,6 +11,10 @@ def main() -> None:
     )
 
     apply_windows_packaged_env()
+    if sys.platform == "win32":
+        from dlpulse_next.windows_pythonnet import configure_windows_pythonnet
+
+        configure_windows_pythonnet()
     setup_packaged_logging()
 
     try:

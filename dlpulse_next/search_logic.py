@@ -9,6 +9,7 @@ from typing import Any
 
 from dlpulse_next.yt_core import (
     detect_content_type,
+    duration_seconds_from_entry,
     extract_url_info,
     fetch_playlist_entries,
     get_format_preset,
@@ -53,7 +54,11 @@ def search_hit_from_extract_info(info: dict, page_url: str) -> dict[str, Any]:
     if not thumb and isinstance(vid, str) and len(vid) == 11:
         thumb = f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg"
     title = (info.get("title") or "").strip() or "Untitled"
-    return {"id": vid, "title": title, "url": page_url, "thumbnail": thumb}
+    row: dict[str, Any] = {"id": vid, "title": title, "url": page_url, "thumbnail": thumb}
+    dur = duration_seconds_from_entry(info)
+    if dur is not None:
+        row["duration"] = dur
+    return row
 
 
 def display_title_for_row(item: dict, *, kind: str, sources_used: Collection[str]) -> str:

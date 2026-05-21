@@ -907,6 +907,15 @@ html[data-theme="light"] button.primary.btn-with-icon .btn-icon {
   width: 128px;
 }
 
+.results-table .col-duration,
+.results-table th.col-duration {
+  width: 4.5rem;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .results-table .th-lib-cb {
   width: 36px;
 }

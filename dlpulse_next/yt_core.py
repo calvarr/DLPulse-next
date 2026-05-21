@@ -670,6 +670,25 @@ def run_download(
     return True, new_files, None
 
 
+def duration_seconds_from_entry(e: dict) -> int | None:
+    """Track length in seconds from a yt-dlp flat entry, when the extractor provides it."""
+    raw = e.get("duration")
+    if raw is None:
+        return None
+    try:
+        sec = int(float(raw))
+    except (TypeError, ValueError):
+        return None
+    return sec if sec >= 0 else None
+
+
+def _hit_with_duration(row: dict, e: dict) -> dict:
+    dur = duration_seconds_from_entry(e)
+    if dur is not None:
+        row["duration"] = dur
+    return row
+
+
 def fetch_playlist_entries(
     url: str, max_entries: int = 500, *, normalize_url: bool = True
 ) -> tuple[list[dict], str | None]:
@@ -698,7 +717,12 @@ def fetch_playlist_entries(
                 continue
             tid = str(e.get("id") or "").strip() or page_url
             thumb = _thumb_from_flat_entry(e)
-            result_sc.append({"id": tid, "title": title, "url": page_url, "thumbnail": thumb})
+            result_sc.append(
+                _hit_with_duration(
+                    {"id": tid, "title": title, "url": page_url, "thumbnail": thumb},
+                    e,
+                )
+            )
         return result_sc, None
 
     result: list[dict] = []
@@ -721,7 +745,12 @@ def fetch_playlist_entries(
         thumb = e.get("thumbnail") or ""
         if not thumb and is_video_id:
             thumb = f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg"
-        result.append({"id": vid, "title": title, "url": page_url, "thumbnail": thumb or ""})
+        result.append(
+            _hit_with_duration(
+                {"id": vid, "title": title, "url": page_url, "thumbnail": thumb or ""},
+                e,
+            )
+        )
     return result, None
 
 
@@ -748,7 +777,12 @@ def search_youtube(query: str, max_results: int = 10) -> list[dict]:
         thumb = e.get("thumbnail")
         if not thumb and is_video_id:
             thumb = f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg"
-        result.append({"id": vid, "title": title, "url": url, "thumbnail": thumb or ""})
+        result.append(
+            _hit_with_duration(
+                {"id": vid, "title": title, "url": url, "thumbnail": thumb or ""},
+                e,
+            )
+        )
     return result
 
 
@@ -788,7 +822,12 @@ def search_soundcloud(query: str, max_results: int = 10) -> list[dict]:
         if not page_url:
             continue
         thumb = _thumb_from_flat_entry(e)
-        result.append({"id": tid or page_url, "title": title, "url": page_url, "thumbnail": thumb})
+        result.append(
+            _hit_with_duration(
+                {"id": tid or page_url, "title": title, "url": page_url, "thumbnail": thumb},
+                e,
+            )
+        )
     return result
 
 

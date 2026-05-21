@@ -451,6 +451,9 @@ function renderResultRows(items) {
     td0.appendChild(cb);
     const td1 = document.createElement("td");
     td1.textContent = title;
+    const tdDur = document.createElement("td");
+    tdDur.className = "col-duration";
+    tdDur.textContent = formatHitDuration(h.duration);
     const tdAct = document.createElement("td");
     tdAct.className = "hit-actions";
     const bp = makeIconButton("play", "Play");
@@ -479,6 +482,7 @@ function renderResultRows(items) {
     tr.appendChild(tdThumb);
     tr.appendChild(td0);
     tr.appendChild(td1);
+    tr.appendChild(tdDur);
     tr.appendChild(tdAct);
     tb.appendChild(tr);
   });
@@ -585,6 +589,11 @@ function formatCcHms(sec) {
   const r = s % 60;
   if (h) return `${h}:${String(m % 60).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
   return `${m}:${String(r).padStart(2, "0")}`;
+}
+
+function formatHitDuration(sec) {
+  if (sec == null || sec === "" || Number.isNaN(Number(sec))) return "—";
+  return formatCcHms(sec);
 }
 
 function ccMediaUrlFromToken(token) {

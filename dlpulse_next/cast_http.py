@@ -26,6 +26,7 @@ from werkzeug.utils import secure_filename
 
 from .settings_store import get_downloads_dir
 from .ffmpeg_tools import apply_bundled_tool_path, find_ffmpeg
+from .process_win import popen_kwargs, register_child_process, unregister_child_process
 
 app = Flask(__name__)
 
@@ -690,10 +691,13 @@ def _ffmpeg_mux_remote_media(*urls: str):
             _log.warning("remote_stream ffmpeg: %s", " ".join(cmd[:8] + ["..."]))
             proc = subprocess.Popen(
                 cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                env={**os.environ, "AV_LOG_FORCE_NOCOLOR": "1"},
+                **popen_kwargs(
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env={**os.environ, "AV_LOG_FORCE_NOCOLOR": "1"},
+                ),
             )
+            register_child_process(proc)
             if proc.stdout is None:
                 return
             while True:
@@ -703,6 +707,7 @@ def _ffmpeg_mux_remote_media(*urls: str):
                 yield chunk
         finally:
             if proc is not None:
+                unregister_child_process(proc)
                 if proc.poll() is None:
                     proc.kill()
                 try:
@@ -963,10 +968,13 @@ def direct_stream():
             _log.info("direct_stream ffmpeg: %s", " ".join(cmd[:10] + ["..."]))
             proc = subprocess.Popen(
                 cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                env={**os.environ, "AV_LOG_FORCE_NOCOLOR": "1"},
+                **popen_kwargs(
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env={**os.environ, "AV_LOG_FORCE_NOCOLOR": "1"},
+                ),
             )
+            register_child_process(proc)
             if proc.stdout is None:
                 return
             while True:
@@ -976,6 +984,7 @@ def direct_stream():
                 yield chunk
         finally:
             if proc is not None:
+                unregister_child_process(proc)
                 if proc.poll() is None:
                     proc.kill()
                 try:

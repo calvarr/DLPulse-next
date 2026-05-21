@@ -41,6 +41,10 @@ Download from **[GitHub Releases](https://github.com/calvarr/DLPulse-next/releas
 3. Run `DLPulseNext-Setup.exe` again **as Administrator**.
 4. If it still fails, uninstall **DLPulse Next** from Settings → Apps, reboot, then install the latest setup from [Releases](https://github.com/calvarr/DLPulse-next/releases).
 
+**Windows — black `ffmpeg` console window stays open?**
+
+Newer builds run ffmpeg without a visible console and stop it when you close the app. If you still see one: close DLPulse Next, end **DLPulseNext.exe** and **ffmpeg.exe** in Task Manager, then update to the latest continuous installer.
+
 **Windows — app does nothing / no window?**
 
 1. Right-click `DLPulseNext-Setup.exe` → **Properties** → if you see **Unblock**, check it and apply (SmartScreen/download block).

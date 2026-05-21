@@ -1506,6 +1506,9 @@ def run_desktop() -> None:
                 _run_browser_only(reason=str(ex))
             raise
     finally:
+        from dlpulse_next.process_win import terminate_child_processes
+
+        terminate_child_processes()
         terminate_external_players()
         try:
             srv.shutdown()

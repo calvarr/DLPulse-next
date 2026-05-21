@@ -25,6 +25,7 @@ SetOverwrite on
 !macro KillRunningApp
   DetailPrint "Closing any running ${PRODUCT_NAME}..."
   ExecWait '$\"$SYSDIR\taskkill.exe$\" /F /IM ${EXE_NAME} /T' $0
+  ExecWait '$\"$SYSDIR\taskkill.exe$\" /F /IM ffmpeg.exe /T' $0
   Sleep 800
 !macroend
 

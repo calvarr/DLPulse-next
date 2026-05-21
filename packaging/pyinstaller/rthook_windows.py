@@ -14,6 +14,14 @@ if getattr(sys, "frozen", False):
     _internal = _exe_dir / "_internal"
     if _internal.is_dir():
         _roots.append(_internal)
+    _bundled_dotnet = _exe_dir / "dotnet"
+    if (_bundled_dotnet / "host").is_dir():
+        os.environ["DOTNET_ROOT"] = str(_bundled_dotnet.resolve())
+    _bundled_wv2 = _exe_dir / "WebView2Runtime"
+    if _bundled_wv2.is_dir():
+        for _wv2exe in _bundled_wv2.rglob("msedgewebview2.exe"):
+            os.environ["DLPULSE_WEBVIEW2_RUNTIME"] = str(_wv2exe.parent.resolve())
+            break
 
 _path = os.environ.get("PATH", "")
 for _r in reversed(_roots):

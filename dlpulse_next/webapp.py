@@ -1458,9 +1458,8 @@ def run_desktop() -> None:
                     "The native window could not start.\n\n"
                     f"Reason: {reason}\n\n"
                     f"Opened in your default browser:\n{url}\n\n"
-                    "On Windows, install WebView2 and .NET Desktop Runtime 6+ (x64):\n"
-                    "https://developer.microsoft.com/microsoft-edge/webview2/\n"
-                    "https://dotnet.microsoft.com/download/dotnet/8.0\n"
+                    "Reinstall the latest DLPulse Next installer from GitHub (it bundles\n"
+                    "WebView2 and .NET Desktop Runtime).\n"
                     "You can choose “Web page” in Settings → Interface for future launches.\n"
                     "Before reinstalling, close this dialog and end DLPulseNext.exe in Task Manager.\n"
                     f"Log files: {log_dir}",
@@ -1494,8 +1493,10 @@ def run_desktop() -> None:
 
         if sys.platform == "win32":
             try:
+                from dlpulse_next.windows_bundled_runtimes import apply_bundled_windows_runtimes
                 from dlpulse_next.windows_pythonnet import ensure_pythonnet_ready
 
+                apply_bundled_windows_runtimes()
                 ensure_pythonnet_ready()
             except RuntimeError as ex:
                 _run_browser_only(reason=str(ex))

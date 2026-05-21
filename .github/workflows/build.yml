@@ -131,6 +131,14 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: pyinstaller packaging/pyinstaller/dlpulse_next.spec
 
+      - name: Stage bundled WebView2 + .NET Desktop runtimes
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          pwsh -NoProfile -File packaging/windows/stage_runtimes.ps1
+          Get-Content packaging/windows/redist/manifest.txt
+
       - name: Verify pythonnet in Windows bundle
         if: matrix.target == 'windows'
         shell: pwsh

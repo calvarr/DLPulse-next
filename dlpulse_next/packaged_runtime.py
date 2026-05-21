@@ -81,6 +81,12 @@ def report_fatal_error(exc: BaseException, *, context: str = "startup") -> None:
 def apply_windows_packaged_env() -> None:
     if sys.platform != "win32":
         return
+    try:
+        from dlpulse_next.windows_bundled_runtimes import apply_bundled_windows_runtimes
+
+        apply_bundled_windows_runtimes()
+    except Exception:
+        pass
     meipass = getattr(sys, "_MEIPASS", None)
     if meipass:
         root = str(meipass)

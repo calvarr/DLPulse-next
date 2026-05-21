@@ -83,6 +83,12 @@ def configure_windows_pythonnet() -> Path | None:
         return None
 
     _apply_path_for_native_dlls()
+    try:
+        from dlpulse_next.windows_bundled_runtimes import apply_bundled_windows_runtimes
+
+        apply_bundled_windows_runtimes()
+    except Exception:
+        pass
     os.environ.setdefault("PYTHONNET_RUNTIME", "coreclr")
 
     rt_dll = _find_python_runtime_dll()
@@ -136,10 +142,9 @@ def ensure_pythonnet_ready() -> None:
         import clr  # noqa: F401
     except Exception as ex:
         raise RuntimeError(
-            "pythonnet/clr could not be loaded in this build. "
-            "Install Microsoft .NET Desktop Runtime 6+ and WebView2, then reinstall DLPulse Next. "
-            f"Technical detail: {ex}"
-        ) from ex
+            "pythonnet/clr could not be loaded. Reinstall DLPulse Next from the latest "
+            "GitHub release (bundled .NET Desktop). Technical detail: {ex}"
+        ).format(ex=ex) from ex
 
     try:
         import clr as _clr
@@ -147,7 +152,6 @@ def ensure_pythonnet_ready() -> None:
         _clr.AddReference("System.Windows.Forms")
     except Exception as ex:
         raise RuntimeError(
-            "pythonnet loaded but System.Windows.Forms is unavailable. "
-            "Install Microsoft .NET Desktop Runtime 6 or newer (Windows Desktop), then retry. "
-            f"Technical detail: {ex}"
-        ) from ex
+            "pythonnet loaded but System.Windows.Forms is unavailable. Reinstall the latest "
+            "DLPulse Next build (includes .NET Desktop). Technical detail: {ex}"
+        ).format(ex=ex) from ex

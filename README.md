@@ -32,7 +32,7 @@ Download from **[GitHub Releases](https://github.com/calvarr/DLPulse-next/releas
 | **Windows** | `DLPulseNext-Setup.exe` | Bundles yt-dlp, ffmpeg, aria2c, WebView2 UI |
 | **macOS** | `DLPulseNext.dmg` | Bundles yt-dlp, ffmpeg, aria2c, WKWebView UI |
 
-**Windows:** run the installer **as Administrator** (right-click → **Run as administrator**), then launch from the Start menu. Requires **Microsoft Edge WebView2 Runtime** (usually preinstalled on Windows 10/11).
+**Windows:** run the installer **as Administrator** (right-click → **Run as administrator**), then launch from the Start menu. The setup **bundles .NET Desktop Runtime 8 (x64)** and **Microsoft Edge WebView2** next to the app under `C:\Program Files\DLPulse Next\` — you do **not** need to install them separately. Installer size is larger (~300–500 MB) because of these runtimes.
 
 **Windows — installer “Error opening file for writing” on `DLPulseNext.exe`?**
 
@@ -49,7 +49,7 @@ Newer builds run ffmpeg without a visible console and stop it when you close the
 
 1. Right-click `DLPulseNext-Setup.exe` → **Properties** → if you see **Unblock**, check it and apply (SmartScreen/download block).
 2. Install [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) if missing.
-3. Install [.NET Desktop Runtime 6+](https://dotnet.microsoft.com/download/dotnet/8.0) (Windows Desktop x64) if the native window fails with `pythonnet`, `System.Windows.Forms`, or pywebview errors.
+3. Use the **latest** continuous installer (older builds did not bundle runtimes). Manual install is only needed for very old builds: [WebView2](https://developer.microsoft.com/microsoft-edge/webview2/) and [.NET Desktop 8 x64](https://dotnet.microsoft.com/download/dotnet/8.0).
 4. Check logs: `%LOCALAPPDATA%\DLPulseNext\logs\startup.log` and `crash.log`.
 5. Run from PowerShell for a visible error (debug build from source):  
    `$env:DLPULSE_DEBUG=1; & "${env:ProgramFiles}\DLPulse Next\DLPulseNext.exe"`

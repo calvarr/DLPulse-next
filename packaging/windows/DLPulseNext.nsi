@@ -45,6 +45,26 @@ UninstPage instfiles
 
 Section "DLPulse Next"
   !insertmacro KillRunningApp
+
+!ifdef REDIST_DIR
+  IfFileExists "${REDIST_DIR}\dotnet\host\fxr\*.*" 0 +4
+    DetailPrint "Bundled .NET Desktop Runtime 8 (x64)..."
+    SetOutPath "$INSTDIR\dotnet"
+    File /r "${REDIST_DIR}\dotnet\*.*"
+  IfFileExists "${REDIST_DIR}\WebView2Runtime\*.*" 0 +4
+    DetailPrint "Bundled Microsoft Edge WebView2 Runtime..."
+    SetOutPath "$INSTDIR\WebView2Runtime"
+    File /r "${REDIST_DIR}\WebView2Runtime\*.*"
+!endif
+
+!ifdef INSTALLERS_DIR
+  DetailPrint "WebView2 bootstrap (if portable copy missing)..."
+  IfFileExists "${INSTALLERS_DIR}\MicrosoftEdgeWebview2Setup.exe" 0 +3
+    SetOutPath "$INSTDIR\_installers"
+    File "${INSTALLERS_DIR}\MicrosoftEdgeWebview2Setup.exe"
+    ExecWait '"$INSTDIR\_installers\MicrosoftEdgeWebview2Setup.exe" /silent /install' $0
+!endif
+
   SetOutPath "$INSTDIR"
   ; Retry locked files once after another kill (common when upgrading over a running build).
   ClearErrors

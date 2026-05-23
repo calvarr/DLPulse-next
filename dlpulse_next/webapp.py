@@ -1498,7 +1498,7 @@ def run_desktop() -> None:
 
                 apply_bundled_windows_runtimes()
                 ensure_pythonnet_ready()
-            except RuntimeError as ex:
+            except Exception as ex:
                 _run_browser_only(reason=str(ex))
                 return
 

@@ -6,6 +6,7 @@ from pathlib import Path
 
 _meipass = getattr(sys, "_MEIPASS", "") or os.environ.get("_MEIPASS", "")
 _roots: list[Path] = []
+_dotnet_root: str | None = None
 if _meipass:
     _roots.append(Path(_meipass))
 if getattr(sys, "frozen", False):
@@ -15,8 +16,10 @@ if getattr(sys, "frozen", False):
     if _internal.is_dir():
         _roots.append(_internal)
     _bundled_dotnet = _exe_dir / "dotnet"
-    if (_bundled_dotnet / "host").is_dir():
-        os.environ["DOTNET_ROOT"] = str(_bundled_dotnet.resolve())
+    if (_bundled_dotnet / "host" / "fxr").is_dir():
+        _dotnet_root = str(_bundled_dotnet.resolve())
+        os.environ["DOTNET_ROOT"] = _dotnet_root
+        os.environ["PYTHONNET_CORECLR_DOTNET_ROOT"] = _dotnet_root
     _bundled_wv2 = _exe_dir / "WebView2Runtime"
     if _bundled_wv2.is_dir():
         for _wv2exe in _bundled_wv2.rglob("msedgewebview2.exe"):
@@ -51,9 +54,11 @@ _cfg_env = os.environ.get("PYTHONNET_CORECLR_RUNTIME_CONFIG", "")
 try:
     from pythonnet import load
 
+    _load_kw = {}
     if _cfg_env:
-        load("coreclr", runtime_config=_cfg_env)
-    else:
-        load("coreclr")
+        _load_kw["runtime_config"] = _cfg_env
+    if _dotnet_root:
+        _load_kw["dotnet_root"] = _dotnet_root
+    load("coreclr", **_load_kw)
 except Exception:
     pass

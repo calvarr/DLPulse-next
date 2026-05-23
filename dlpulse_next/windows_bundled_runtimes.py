@@ -56,8 +56,10 @@ def apply_bundled_windows_runtimes() -> None:
 
     dotnet = find_bundled_dotnet_root()
     if dotnet is not None:
-        os.environ["DOTNET_ROOT"] = str(dotnet)
-        os.environ["PATH"] = str(dotnet) + os.pathsep + os.environ.get("PATH", "")
+        root_s = str(dotnet)
+        os.environ["DOTNET_ROOT"] = root_s
+        os.environ["PYTHONNET_CORECLR_DOTNET_ROOT"] = root_s
+        os.environ["PATH"] = root_s + os.pathsep + os.environ.get("PATH", "")
         _log.info("Bundled DOTNET_ROOT=%s", dotnet)
 
     wv2 = find_bundled_webview2_folder()

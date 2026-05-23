@@ -107,6 +107,15 @@ def configure_windows_pythonnet() -> Path | None:
     return cfg_path
 
 
+def _bundled_dotnet_root() -> Path | None:
+    try:
+        from dlpulse_next.windows_bundled_runtimes import find_bundled_dotnet_root
+
+        return find_bundled_dotnet_root()
+    except Exception:
+        return None
+
+
 def bootstrap_pythonnet() -> None:
     """Load CoreCLR runtime (pythonnet 3). Safe to call multiple times."""
     global _bootstrapped
@@ -114,14 +123,23 @@ def bootstrap_pythonnet() -> None:
         return
 
     cfg_path = configure_windows_pythonnet()
+    dotnet_root = _bundled_dotnet_root()
+    if dotnet_root is not None:
+        root_s = str(dotnet_root)
+        os.environ["DOTNET_ROOT"] = root_s
+        os.environ["PYTHONNET_CORECLR_DOTNET_ROOT"] = root_s
+
+    load_kw: dict[str, str] = {}
+    if cfg_path is not None:
+        load_kw["runtime_config"] = str(cfg_path)
+    if dotnet_root is not None:
+        load_kw["dotnet_root"] = str(dotnet_root)
+
     try:
         from pythonnet import load
 
-        if cfg_path is not None:
-            load("coreclr", runtime_config=str(cfg_path))
-        else:
-            load("coreclr")
-        _log.info("pythonnet.load(coreclr) OK")
+        load("coreclr", **load_kw)
+        _log.info("pythonnet.load(coreclr) OK dotnet_root=%s", dotnet_root)
     except Exception as ex:
         _log.warning("pythonnet.load failed (%s); relying on env vars", ex)
 
@@ -138,13 +156,27 @@ def ensure_pythonnet_ready() -> None:
 
     bootstrap_pythonnet()
 
+    dotnet_root = _bundled_dotnet_root()
+    if dotnet_root is not None:
+        root_s = str(dotnet_root)
+        os.environ["DOTNET_ROOT"] = root_s
+        os.environ["PYTHONNET_CORECLR_DOTNET_ROOT"] = root_s
+
     try:
         import clr  # noqa: F401
     except Exception as ex:
+        detail = (
+            f"{ex}"
+            if dotnet_root is not None
+            else (
+                f"{ex} (bundled .NET not found under the install folder — reinstall "
+                "DLPulse Next as Administrator)"
+            )
+        )
         raise RuntimeError(
             "pythonnet/clr could not be loaded. Reinstall DLPulse Next from the latest "
-            "GitHub release (bundled .NET Desktop). Technical detail: {ex}"
-        ).format(ex=ex) from ex
+            f"GitHub release (bundled .NET Desktop). Technical detail: {detail}"
+        ) from ex
 
     try:
         import clr as _clr
@@ -153,5 +185,5 @@ def ensure_pythonnet_ready() -> None:
     except Exception as ex:
         raise RuntimeError(
             "pythonnet loaded but System.Windows.Forms is unavailable. Reinstall the latest "
-            "DLPulse Next build (includes .NET Desktop). Technical detail: {ex}"
-        ).format(ex=ex) from ex
+            f"DLPulse Next build (includes .NET Desktop). Technical detail: {ex}"
+        ) from ex

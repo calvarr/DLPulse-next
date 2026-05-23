@@ -43,10 +43,16 @@ try {
     } else {
         Write-Warning "packaging/windows/redist missing — run stage_runtimes.ps1 on Windows first"
     }
-    $installers = Join-Path $redist "installers"
-    if (Test-Path $installers) {
-        $instNsis = (Resolve-Path -LiteralPath $installers).Path -replace "\\", "/"
-        $nsisArgs += "/DINSTALLERS_DIR=$instNsis"
+    $wv2Setup = Join-Path $redist "installers\MicrosoftEdgeWebview2Setup.exe"
+    if (Test-Path -LiteralPath $wv2Setup) {
+        $wv2Nsis = (Resolve-Path -LiteralPath $wv2Setup).Path -replace "\\", "/"
+        $nsisArgs += "/DWEBVIEW2_BOOTSTRAPPER=$wv2Nsis"
+        Write-Host "NSIS WEBVIEW2_BOOTSTRAPPER=$wv2Nsis"
+    } else {
+        $wv2Portable = Join-Path $redist "WebView2Runtime"
+        if (-not (Test-Path $wv2Portable)) {
+            Write-Warning "No WebView2 portable copy and no bootstrapper — run stage_runtimes.ps1"
+        }
     }
     & $makensis @nsisArgs $nsi
     if ($LASTEXITCODE -ne 0) {

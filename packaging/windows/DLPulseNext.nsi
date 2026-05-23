@@ -57,12 +57,13 @@ Section "DLPulse Next"
     File /r "${REDIST_DIR}\WebView2Runtime\*.*"
 !endif
 
-!ifdef INSTALLERS_DIR
-  DetailPrint "WebView2 bootstrap (if portable copy missing)..."
-  IfFileExists "${INSTALLERS_DIR}\MicrosoftEdgeWebview2Setup.exe" 0 +3
-    SetOutPath "$INSTDIR\_installers"
-    File "${INSTALLERS_DIR}\MicrosoftEdgeWebview2Setup.exe"
-    ExecWait '"$INSTDIR\_installers\MicrosoftEdgeWebview2Setup.exe" /silent /install' $0
+; WEBVIEW2_BOOTSTRAPPER is set at compile time only when stage_runtimes downloaded the bootstrapper
+; (CI hosts with preinstalled WebView2 get a portable copy instead — no bootstrapper file).
+!ifdef WEBVIEW2_BOOTSTRAPPER
+  DetailPrint "Installing Microsoft Edge WebView2 Runtime..."
+  SetOutPath "$INSTDIR\_installers"
+  File "${WEBVIEW2_BOOTSTRAPPER}"
+  ExecWait '"$INSTDIR\_installers\MicrosoftEdgeWebview2Setup.exe" /silent /install' $0
 !endif
 
   SetOutPath "$INSTDIR"

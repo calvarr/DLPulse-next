@@ -155,6 +155,21 @@ jobs:
           pwsh -NoProfile -File packaging/windows/stage_runtimes.ps1
           Get-Content packaging/windows/redist/manifest.txt
 
+      - name: Verify WebView2 redist for installer
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $redist = 'packaging/windows/redist'
+          $portable = Join-Path $redist 'WebView2Runtime'
+          $bootstrap = Join-Path $redist 'installers/MicrosoftEdgeWebview2Setup.exe'
+          $hasPortable = Test-Path (Join-Path $portable '*')
+          $hasBootstrap = Test-Path -LiteralPath $bootstrap
+          if (-not $hasPortable -and -not $hasBootstrap) {
+            throw 'WebView2 missing: need portable WebView2Runtime or MicrosoftEdgeWebview2Setup.exe'
+          }
+          Write-Host "WebView2 portable=$hasPortable bootstrap=$hasBootstrap"
+
       - name: Verify pythonnet in Windows bundle
         if: matrix.target == 'windows'
         shell: pwsh

@@ -65,6 +65,7 @@ from dlpulse_next.settings_store import (
     get_app_update_dismissed_key,
     get_github_update_dismissed_main_sha,
     get_playback_mode,
+    default_ui_launch_mode,
     get_ui_launch_mode,
     get_ui_theme,
     get_use_aria2c,
@@ -571,7 +572,7 @@ def create_app() -> Flask:
         if "ui_theme" in data:
             set_ui_theme(str(data.get("ui_theme") or "dark"))
         if "ui_launch_mode" in data:
-            set_ui_launch_mode(str(data.get("ui_launch_mode") or "native"))
+            set_ui_launch_mode(str(data.get("ui_launch_mode") or default_ui_launch_mode()))
         if "download_parallel" in data:
             try:
                 set_download_parallel(int(data["download_parallel"]))
@@ -1417,7 +1418,7 @@ def run_desktop() -> None:
     from werkzeug.serving import make_server
 
     from dlpulse_next.packaged_runtime import is_frozen, show_fatal_error
-    from dlpulse_next.settings_store import get_ui_launch_mode
+    from dlpulse_next.settings_store import get_ui_launch_mode, set_ui_launch_mode
 
     atexit.register(terminate_external_players)
 
@@ -1448,21 +1449,9 @@ def run_desktop() -> None:
         webbrowser.open(url)
         if sys.platform == "win32" or is_frozen():
             if reason and get_ui_launch_mode() == "native":
-                log_dir = (
-                    "%LOCALAPPDATA%\\DLPulseNext\\logs"
-                    if sys.platform == "win32"
-                    else "~/.local/state/dlpulse-next/logs"
-                )
-                show_fatal_error(
-                    "DLPulse Next",
-                    "The native window could not start.\n\n"
-                    f"Reason: {reason}\n\n"
-                    f"Opened in your default browser:\n{url}\n\n"
-                    "Reinstall the latest DLPulse Next installer from GitHub (it bundles\n"
-                    "WebView2 and .NET Desktop Runtime).\n"
-                    "You can choose “Web page” in Settings → Interface for future launches.\n"
-                    "Before reinstalling, close this dialog and end DLPulseNext.exe in Task Manager.\n"
-                    f"Log files: {log_dir}",
+                set_ui_launch_mode("browser")
+                _log.warning(
+                    "Native window failed; switched to browser for next launch: %s", reason
                 )
             threading.Event().wait()
             return
@@ -1487,6 +1476,15 @@ def run_desktop() -> None:
         if launch_mode == "browser":
             _run_browser_only()
             return
+
+        if sys.platform == "win32" and launch_mode == "native":
+            from dlpulse_next.windows_bundled_runtimes import find_bundled_dotnet_root
+
+            if find_bundled_dotnet_root() is None:
+                _log.warning("No .NET Desktop runtime for native window; using browser")
+                set_ui_launch_mode("browser")
+                _run_browser_only()
+                return
 
         import webview
         from webview.errors import WebViewException

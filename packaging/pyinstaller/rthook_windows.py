@@ -15,13 +15,28 @@ if getattr(sys, "frozen", False):
     _internal = _exe_dir / "_internal"
     if _internal.is_dir():
         _roots.append(_internal)
-    _bundled_dotnet = _exe_dir / "dotnet"
-    if (_bundled_dotnet / "host" / "fxr").is_dir():
+    _bundled_dotnet = None
+    for _dotnet_rel in ("dotnet", "_internal/dotnet"):
+        _cand = _exe_dir / _dotnet_rel
+        if (_cand / "host" / "fxr").is_dir():
+            _bundled_dotnet = _cand
+            break
+    if _bundled_dotnet is not None:
         _dotnet_root = str(_bundled_dotnet.resolve())
+    else:
+        _sys_dotnet = Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "dotnet"
+        if (_sys_dotnet / "host" / "fxr").is_dir():
+            _dotnet_root = str(_sys_dotnet.resolve())
+    if _dotnet_root:
         os.environ["DOTNET_ROOT"] = _dotnet_root
         os.environ["PYTHONNET_CORECLR_DOTNET_ROOT"] = _dotnet_root
-    _bundled_wv2 = _exe_dir / "WebView2Runtime"
-    if _bundled_wv2.is_dir():
+    _bundled_wv2 = None
+    for _wv2_rel in ("WebView2Runtime", "_internal/WebView2Runtime"):
+        _cand = _exe_dir / _wv2_rel
+        if _cand.is_dir():
+            _bundled_wv2 = _cand
+            break
+    if _bundled_wv2 is not None:
         for _wv2exe in _bundled_wv2.rglob("msedgewebview2.exe"):
             os.environ["DLPULSE_WEBVIEW2_RUNTIME"] = str(_wv2exe.parent.resolve())
             break

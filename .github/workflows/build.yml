@@ -182,6 +182,20 @@ jobs:
           if (-not $cfg) { throw 'windows_runtimeconfig.json missing from bundle' }
           Write-Host "runtimeconfig: $($cfg.FullName)"
 
+      - name: Embed .NET and WebView2 into PyInstaller dist
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: pwsh -NoProfile -File packaging/windows/embed_runtimes_into_dist.ps1 .
+
+      - name: Verify embedded dotnet in Windows dist
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $fxr = 'dist\DLPulseNext\dotnet\host\fxr'
+          if (-not (Test-Path $fxr)) { throw "dotnet not embedded in dist\DLPulseNext (run stage_runtimes + embed)" }
+          Write-Host "OK embedded dotnet fxr: $fxr"
+
       - name: Build Windows installer
         if: matrix.target == 'windows'
         shell: pwsh

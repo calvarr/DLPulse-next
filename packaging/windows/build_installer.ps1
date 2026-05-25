@@ -14,6 +14,10 @@ try {
     if (Test-Path $bundleScript) {
         & $bundleScript $Root
     }
+    $embedScript = Join-Path $Root "packaging\windows\embed_runtimes_into_dist.ps1"
+    if (Test-Path $embedScript) {
+        & $embedScript $Root
+    }
 
     $candidates = @(
         "${env:ProgramFiles(x86)}\NSIS\makensis.exe",

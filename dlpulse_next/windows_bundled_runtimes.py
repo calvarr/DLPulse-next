@@ -18,13 +18,42 @@ def install_dir() -> Path | None:
     return None
 
 
-def find_bundled_dotnet_root() -> Path | None:
-    """Folder layout from ``windowsdesktop-runtime-*-win-x64.zip`` (contains host/, shared/)."""
+def _is_dotnet_root(path: Path) -> bool:
+    """CoreCLR host + desktop shared framework (pythonnet / WinForms)."""
+    if not (path / "host" / "fxr").is_dir():
+        return False
+    desktop = path / "shared" / "Microsoft.WindowsDesktop.App"
+    return desktop.is_dir() and any(desktop.iterdir())
+
+
+def _dotnet_root_candidates() -> list[Path]:
+    out: list[Path] = []
     base = install_dir()
-    if base is None:
-        return None
-    for candidate in (base / "dotnet", base / "runtime" / "dotnet"):
-        if (candidate / "host" / "fxr").is_dir() and (candidate / "shared").is_dir():
+    if base is not None:
+        for rel in ("dotnet", "runtime/dotnet", "_internal/dotnet"):
+            out.append((base / rel).resolve())
+    for env_key in ("DOTNET_ROOT", "PYTHONNET_CORECLR_DOTNET_ROOT"):
+        raw = (os.environ.get(env_key) or "").strip()
+        if raw:
+            out.append(Path(raw).expanduser().resolve())
+    pf = os.environ.get("ProgramFiles", r"C:\Program Files")
+    out.append(Path(pf).expanduser() / "dotnet")
+    pf86 = os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
+    out.append(Path(pf86).expanduser() / "dotnet")
+    seen: set[str] = set()
+    unique: list[Path] = []
+    for p in out:
+        key = str(p)
+        if key not in seen:
+            seen.add(key)
+            unique.append(p)
+    return unique
+
+
+def find_bundled_dotnet_root() -> Path | None:
+    """Portable dotnet next to the app, else system-wide .NET Desktop install."""
+    for candidate in _dotnet_root_candidates():
+        if _is_dotnet_root(candidate):
             return candidate.resolve()
     return None
 
@@ -37,13 +66,13 @@ def find_bundled_webview2_folder() -> Path | None:
     roots = (
         base / "WebView2Runtime",
         base / "runtime" / "WebView2Runtime",
+        base / "_internal" / "WebView2Runtime",
     )
     for root in roots:
         if not root.is_dir():
             continue
         for exe in root.rglob("msedgewebview2.exe"):
             return exe.parent.resolve()
-        # Some layouts nest version folders
         for exe in root.rglob("msedge.exe"):
             return exe.parent.resolve()
     return None
@@ -60,7 +89,7 @@ def apply_bundled_windows_runtimes() -> None:
         os.environ["DOTNET_ROOT"] = root_s
         os.environ["PYTHONNET_CORECLR_DOTNET_ROOT"] = root_s
         os.environ["PATH"] = root_s + os.pathsep + os.environ.get("PATH", "")
-        _log.info("Bundled DOTNET_ROOT=%s", dotnet)
+        _log.info("DOTNET_ROOT=%s", dotnet)
 
     wv2 = find_bundled_webview2_folder()
     if wv2 is not None:

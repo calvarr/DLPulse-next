@@ -165,14 +165,14 @@ def ensure_pythonnet_ready() -> None:
     try:
         import clr  # noqa: F401
     except Exception as ex:
-        detail = (
-            f"{ex}"
-            if dotnet_root is not None
-            else (
-                f"{ex} (bundled .NET not found under the install folder — reinstall "
-                "DLPulse Next as Administrator)"
+        if dotnet_root is not None:
+            detail = str(ex)
+        else:
+            detail = (
+                f"{ex} (.NET Desktop not found next to the app or under Program Files\\dotnet — "
+                "reinstall the latest DLPulse Next installer as Administrator, or install "
+                ".NET Desktop 8 x64 from Microsoft)"
             )
-        )
         raise RuntimeError(
             "pythonnet/clr could not be loaded. Reinstall DLPulse Next from the latest "
             f"GitHub release (bundled .NET Desktop). Technical detail: {detail}"

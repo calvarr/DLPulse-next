@@ -53,7 +53,7 @@ Newer builds run ffmpeg without a visible console and stop it when you close the
 4. Check logs: `%LOCALAPPDATA%\DLPulseNext\logs\startup.log` and `crash.log`.
 5. Run from PowerShell for a visible error (debug build from source):  
    `$env:DLPULSE_DEBUG=1; & "${env:ProgramFiles}\DLPulse Next\DLPulseNext.exe"`
-6. If the native window still fails, the app opens the UI in your default browser and shows a message with the local URL. In **Settings → Interface**, you can choose **Web page** to always use the browser, or **Native application** for a desktop window.
+6. On Windows the default is **Web page** (your browser). If the native window fails, the app opens the browser and switches to web page for the next launch. In **Settings → Interface** you can choose **Native application** for a desktop window (requires bundled or system .NET Desktop + WebView2).
 
 **macOS:** open the DMG, drag the app to Applications. If macOS blocks the unsigned build: **System Settings → Privacy & Security → Open Anyway**.
 

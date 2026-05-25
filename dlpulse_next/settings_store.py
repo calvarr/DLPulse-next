@@ -196,19 +196,24 @@ def set_ui_theme(theme: str) -> None:
     _write_settings(data)
 
 
+def default_ui_launch_mode() -> str:
+    """Fresh installs: browser on Windows (WebView2/.NET issues); native elsewhere."""
+    return "browser" if sys.platform == "win32" else "native"
+
+
 def get_ui_launch_mode() -> str:
     """How the desktop shell opens on launch: native window or default browser."""
     raw = _read_settings().get("ui_launch_mode")
     mode = ("" if raw is None else str(raw)).strip().lower()
     if mode in ("native", "browser"):
         return mode
-    return "native"
+    return default_ui_launch_mode()
 
 
 def set_ui_launch_mode(mode: str) -> None:
     value = (mode or "").strip().lower()
     if value not in ("native", "browser"):
-        value = "native"
+        value = default_ui_launch_mode()
     data = _read_settings()
     data["ui_launch_mode"] = value
     if "download_dir" not in data:

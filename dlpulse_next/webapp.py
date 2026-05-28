@@ -1477,25 +1477,27 @@ def run_desktop() -> None:
             _run_browser_only()
             return
 
-        if sys.platform == "win32" and launch_mode == "native":
-            from dlpulse_next.windows_bundled_runtimes import find_bundled_dotnet_root
-
-            if find_bundled_dotnet_root() is None:
-                _log.warning("No .NET Desktop runtime for native window; using browser")
-                set_ui_launch_mode("browser")
-                _run_browser_only()
-                return
-
         import webview
         from webview.errors import WebViewException
 
         if sys.platform == "win32":
             try:
-                from dlpulse_next.windows_bundled_runtimes import apply_bundled_windows_runtimes
+                from dlpulse_next.windows_bundled_runtimes import (
+                    _pythonnet_runtime,
+                    apply_bundled_windows_runtimes,
+                    find_bundled_dotnet_root,
+                )
                 from dlpulse_next.windows_pythonnet import ensure_pythonnet_ready
 
-                apply_bundled_windows_runtimes()
+                if launch_mode == "native" and _pythonnet_runtime() == "coreclr":
+                    if find_bundled_dotnet_root() is None:
+                        _log.warning("No .NET Desktop runtime for native window; using browser")
+                        set_ui_launch_mode("browser")
+                        _run_browser_only()
+                        return
+
                 ensure_pythonnet_ready()
+                apply_bundled_windows_runtimes()
             except Exception as ex:
                 _run_browser_only(reason=str(ex))
                 return

@@ -78,18 +78,28 @@ def find_bundled_webview2_folder() -> Path | None:
     return None
 
 
+def _pythonnet_runtime() -> str:
+    return (os.environ.get("PYTHONNET_RUNTIME") or "netfx").strip().lower()
+
+
 def apply_bundled_windows_runtimes() -> None:
-    """Point CoreCLR and pywebview at runtimes copied by the NSIS installer."""
+    """Point pywebview at bundled WebView2; CoreCLR dotnet only when using coreclr."""
     if sys.platform != "win32":
         return
 
-    dotnet = find_bundled_dotnet_root()
-    if dotnet is not None:
-        root_s = str(dotnet)
-        os.environ["DOTNET_ROOT"] = root_s
-        os.environ["PYTHONNET_CORECLR_DOTNET_ROOT"] = root_s
-        os.environ["PATH"] = root_s + os.pathsep + os.environ.get("PATH", "")
-        _log.info("DOTNET_ROOT=%s", dotnet)
+    # pywebview WinForms on Windows uses pythonnet + .NET Framework (netfx).
+    # Pointing DOTNET_ROOT at bundled .NET 8 breaks WinForms/WebView2 interop.
+    if _pythonnet_runtime() == "coreclr":
+        dotnet = find_bundled_dotnet_root()
+        if dotnet is not None:
+            root_s = str(dotnet)
+            os.environ["DOTNET_ROOT"] = root_s
+            os.environ["PYTHONNET_CORECLR_DOTNET_ROOT"] = root_s
+            os.environ["PATH"] = root_s + os.pathsep + os.environ.get("PATH", "")
+            _log.info("DOTNET_ROOT=%s", dotnet)
+    else:
+        for key in ("DOTNET_ROOT", "PYTHONNET_CORECLR_DOTNET_ROOT"):
+            os.environ.pop(key, None)
 
     wv2 = find_bundled_webview2_folder()
     if wv2 is not None:

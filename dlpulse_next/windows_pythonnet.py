@@ -91,10 +91,11 @@ def configure_windows_pythonnet() -> Path | None:
         pass
     # Prefer .NET Framework on Windows for pywebview WinForms interop.
     # WebView2 WinForms bindings fail under CoreCLR (missing ContextMenu, etc.).
-    if getattr(sys, "frozen", False):
-        os.environ["PYTHONNET_RUNTIME"] = "netfx"
+    override = (os.environ.get("DLPULSE_PYTHONNET_RUNTIME") or "").strip().lower()
+    if override in ("netfx", "coreclr"):
+        os.environ["PYTHONNET_RUNTIME"] = override
     else:
-        os.environ.setdefault("PYTHONNET_RUNTIME", "netfx")
+        os.environ["PYTHONNET_RUNTIME"] = "netfx"
 
     rt_dll = _find_python_runtime_dll()
     if rt_dll is not None:
@@ -102,14 +103,27 @@ def configure_windows_pythonnet() -> Path | None:
         _log.info("PYTHONNET_PYDLL=%s", rt_dll)
 
     cfg_path: Path | None = None
-    for cfg in _runtimeconfig_candidates():
-        if cfg.is_file():
-            cfg_path = cfg.resolve()
-            os.environ["PYTHONNET_CORECLR_RUNTIME_CONFIG"] = str(cfg_path)
-            _log.info("PYTHONNET_CORECLR_RUNTIME_CONFIG=%s", cfg_path)
-            break
+    runtime_pref = (os.environ.get("PYTHONNET_RUNTIME") or "netfx").strip().lower()
+    if runtime_pref == "coreclr":
+        for cfg in _runtimeconfig_candidates():
+            if cfg.is_file():
+                cfg_path = cfg.resolve()
+                os.environ["PYTHONNET_CORECLR_RUNTIME_CONFIG"] = str(cfg_path)
+                _log.info("PYTHONNET_CORECLR_RUNTIME_CONFIG=%s", cfg_path)
+                break
+    else:
+        os.environ.pop("PYTHONNET_CORECLR_RUNTIME_CONFIG", None)
 
     return cfg_path
+
+
+def _clear_coreclr_env() -> None:
+    for key in (
+        "DOTNET_ROOT",
+        "PYTHONNET_CORECLR_DOTNET_ROOT",
+        "PYTHONNET_CORECLR_RUNTIME_CONFIG",
+    ):
+        os.environ.pop(key, None)
 
 
 def _bundled_dotnet_root() -> Path | None:
@@ -128,11 +142,6 @@ def bootstrap_pythonnet() -> None:
         return
 
     cfg_path = configure_windows_pythonnet()
-    dotnet_root = _bundled_dotnet_root()
-    if dotnet_root is not None:
-        root_s = str(dotnet_root)
-        os.environ["DOTNET_ROOT"] = root_s
-        os.environ["PYTHONNET_CORECLR_DOTNET_ROOT"] = root_s
 
     try:
         from pythonnet import load
@@ -145,12 +154,19 @@ def bootstrap_pythonnet() -> None:
     if runtime_pref == "netfx":
         try:
             load("netfx")
+            _clear_coreclr_env()
             _log.info("pythonnet.load(netfx) OK")
             _bootstrapped = True
             return
         except Exception as ex:
             _log.warning("pythonnet.load(netfx) failed (%s); trying coreclr", ex)
             os.environ["PYTHONNET_RUNTIME"] = "coreclr"
+
+    dotnet_root = _bundled_dotnet_root()
+    if dotnet_root is not None:
+        root_s = str(dotnet_root)
+        os.environ["DOTNET_ROOT"] = root_s
+        os.environ["PYTHONNET_CORECLR_DOTNET_ROOT"] = root_s
 
     load_kw: dict[str, str] = {}
     if cfg_path is not None:
@@ -177,15 +193,10 @@ def ensure_pythonnet_ready() -> None:
 
     bootstrap_pythonnet()
 
-    dotnet_root = _bundled_dotnet_root()
-    if dotnet_root is not None:
-        root_s = str(dotnet_root)
-        os.environ["DOTNET_ROOT"] = root_s
-        os.environ["PYTHONNET_CORECLR_DOTNET_ROOT"] = root_s
-
     try:
         import clr  # noqa: F401
     except Exception as ex:
+        dotnet_root = _bundled_dotnet_root()
         if dotnet_root is not None:
             detail = str(ex)
         else:

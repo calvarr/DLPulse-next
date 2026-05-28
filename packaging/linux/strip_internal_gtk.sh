@@ -13,7 +13,14 @@ INTERNAL="${1:?Usage: strip_internal_gtk.sh path/to/_internal}"
 [[ -d "$INTERNAL" ]] || exit 0
 
 # Library name prefixes that must come from the host (never from _internal/).
+#
+# libstdc++ / libgcc_s: the build host (Ubuntu 22.04, older GCC) ships an older
+# libstdc++ than rolling distros. Host WebKit/ICU (e.g. libicui18n) require a
+# newer CXXABI (1.3.15+), so the bundled libstdc++ breaks the typelib load with
+# "version CXXABI_1.3.15 not found". Dropping them forces the newer host copy.
 SHADOW_PREFIXES=(
+  libstdc++
+  libgcc_s
   libglib-2.0
   libgio-2.0
   libgobject-2.0

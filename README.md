@@ -58,20 +58,82 @@ Newer builds run ffmpeg without a visible console and stop it when you close the
    `$env:DLPULSE_DEBUG=1; & "${env:ProgramFiles}\DLPulse Next\DLPulseNext.exe"`
 6. On Windows the default is **Web page** (your browser). If the native window fails, the app opens the browser and switches to web page for the next launch. In **Settings → Interface** you can choose **Native application** for a desktop window (requires bundled or system .NET Desktop + WebView2).
 
-**macOS:** open the DMG, drag the app to Applications. If macOS blocks the unsigned build: **System Settings → Privacy & Security → Open Anyway**.
+**macOS — install & first run (step by step)**
+
+> The DMG is **ad-hoc signed** (no Apple Developer ID), so macOS Gatekeeper will block the first launch. This is normal — follow the steps below.
+
+1. **Pick the right DMG for your CPU.**
+
+   Run this in **Terminal** to check which Mac you have:
+
+   ```bash
+   uname -m
+   ```
+
+   - `x86_64` → download **`DLPulseNext-x86_64.dmg`** (Intel)
+   - `arm64`  → download **`DLPulseNext-arm64.dmg`** (Apple Silicon: M1/M2/M3/M4)
+
+   If you pick the wrong one, macOS will say **"not compatible with this Mac"**.
+
+2. **Mount the DMG.** Double‑click `DLPulseNext-<arch>.dmg` in Finder. A new "DLPulse Next" volume appears in the Finder sidebar with `DLPulseNext.app` inside.
+
+3. **Copy the app to Applications.** Drag `DLPulseNext.app` from the mounted volume into your `Applications` folder. Do **not** run it from inside the DMG. After copying, eject the DMG (right‑click the volume → **Eject**).
+
+4. **Bypass Gatekeeper on first launch.** Pick **one** of the methods below. The first one is recommended.
+
+   **Method A — Right‑click → Open (recommended)**
+
+   1. Open `Applications` in Finder.
+   2. **Right‑click** (or Control‑click) on `DLPulseNext.app` → **Open**.
+   3. macOS shows a dialog: *"DLPulse Next can't be opened because it is from an unidentified developer / Apple cannot check it for malicious software."* Click **Open**.
+   4. The app starts and the warning will not appear again on subsequent launches.
+
+   **Method B — System Settings → Privacy & Security**
+
+   1. Try to open the app once by double‑clicking it. macOS will refuse and show a warning dialog. Close that dialog.
+   2. Open **System Settings → Privacy & Security**.
+   3. Scroll down to the **Security** section. You will see a line like: *"DLPulseNext was blocked from use because it is not from an identified developer."* Click **Open Anyway** next to it. (You may need to enter your password.)
+   4. Try to open the app again — confirm in the new dialog that appears.
+
+   **Method C — Strip the quarantine attribute via Terminal (advanced)**
+
+   When macOS quarantines an app, it sets the `com.apple.quarantine` extended attribute on it. Removing it makes macOS treat the app as if it were not downloaded from the internet:
+
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/DLPulseNext.app
+   ```
+
+   After this, double‑click works normally without any Gatekeeper prompt.
+
+5. **Avoid quarantine altogether (optional).** If you frequently work with unsigned tools, you can prevent macOS from setting the quarantine attribute on files downloaded with Safari:
+
+   ```bash
+   defaults write com.apple.LaunchServices LSQuarantine -bool false
+   ```
+
+   Set it back to `true` if you want the protection back. This applies only to files downloaded **after** changing the setting.
+
+**macOS — troubleshooting**
+
+| Error | Fix |
+|---|---|
+| *"not compatible with this Mac"* | Wrong architecture — re‑download the DMG matching `uname -m`. |
+| *"is damaged and can't be opened. You should move it to the Trash"* | The quarantine bit is set and the ad-hoc signature is being rejected. Run `xattr -dr com.apple.quarantine /Applications/DLPulseNext.app` (Method C above), then try again. |
+| *"can't be opened because Apple cannot check it for malicious software"* | Use Method A or B above. |
+| App opens but immediately crashes / no window appears | Check Console.app → search for `DLPulseNext`. The Flask UI also serves on a local port; if you see "Server listening on 127.0.0.1:PORT" in logs, open `http://127.0.0.1:PORT` in your browser. |
 
 ---
 
 ### Linux
 
-- **AppImage** (`DLPulseNext-x86_64.AppImage` from [Releases](https://github.com/calvarr/DLPulse-next/releases)) — `chmod +x` and run. **Self-contained:** bundles GTK3 + WebKit2GTK + GStreamer and their dependencies, so it runs on any modern Linux **without installing extra packages**. Only a reasonably recent glibc is required (built on Ubuntu 22.04, so it runs on distros with glibc ≥ 2.35). The GPU/GL driver stack still comes from your system.
-- **From source** — `pip install -e ".[webview-gtk]"` then `python -m dlpulse_next` (best for development). This path **does** need the system packages below.
+Two options — both need the same system packages (GTK3 + WebKit2GTK + GStreamer):
 
-**Requirements:** the AppImage needs nothing extra. For the **from-source** path you need Python **3.11+**, pip, and the system packages below.
+- **AppImage** (`DLPulseNext-x86_64.AppImage` from [Releases](https://github.com/calvarr/DLPulse-next/releases)) — `chmod +x` and run. Thin bundle: uses your distro's GTK/WebKit/GStreamer.
+- **From source** — `pip install -e ".[webview-gtk]"` then `python -m dlpulse_next` (best for development).
 
-#### 1. System dependencies (from-source only)
+**Requirements:** Python **3.11+** (only for the from-source path), pip, and the system packages below.
 
-> Skip this section if you are using the AppImage — it bundles everything.
+#### 1. System dependencies
 
 Pick **one** block for your distribution.
 

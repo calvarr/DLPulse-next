@@ -24,9 +24,24 @@ MIN_MACOS="${MIN_MACOS:-$DEFAULT_MIN_MACOS}"
 
 APP="build/DLPulseNext.app"
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp -a "$BUNDLE"/. "$APP/Contents/MacOS/"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks"
+
+# PyInstaller's macOS launcher hardcodes Python lookup at Contents/Frameworks/Python
+# (relative to Contents/MacOS/<launcher>). Wrapping the onedir output flat into
+# Contents/MacOS/ produces a broken bundle that fails with "Failed to load Python
+# shared library .../Contents/Frameworks/Python" and "ModuleNotFoundError: encodings".
+# Correct mac .app layout: launcher in MacOS/, all support files in Frameworks/.
+if [[ ! -d "$BUNDLE/_internal" ]]; then
+  echo "Missing $BUNDLE/_internal — PyInstaller layout changed?" >&2
+  exit 1
+fi
+cp -a "$BUNDLE/DLPulseNext" "$APP/Contents/MacOS/DLPulseNext"
+cp -a "$BUNDLE/_internal"/. "$APP/Contents/Frameworks/"
 chmod +x "$APP/Contents/MacOS/DLPulseNext"
+
+# Re-apply ad-hoc signature to the launcher only (deep --sign chokes on
+# *.dist-info dirs that codesign mistakes for nested bundles).
+codesign --force --sign - "$APP/Contents/MacOS/DLPulseNext" 2>/dev/null || true
 
 # yt-dlp expects ffmpeg/ffprobe with standard names (imageio ships ffmpeg-* only).
 PY="${PYTHON:-python3}"

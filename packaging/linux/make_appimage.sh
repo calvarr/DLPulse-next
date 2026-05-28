@@ -352,6 +352,11 @@ export APPDIR="\$HERE"
 # do NOT reorder library paths toward the host (which would defeat bundling).
 export DLPULSE_SELFCONTAINED=1
 
+# Pin the exact WebKit/Soup versions that were bundled so gobject-introspection
+# does not pick a different host typelib (which would load host WebKit + libs).
+export DLPULSE_WEBKIT_VER="${WK_VER}"
+export DLPULSE_SOUP_VER="${SOUP_VER}"
+
 WK_VER="${WK_VER}"
 
 export PATH="\$HERE/usr/bin:\${PATH:-}"

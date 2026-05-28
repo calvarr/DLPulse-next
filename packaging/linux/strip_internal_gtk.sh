@@ -81,6 +81,48 @@ SHADOW_PREFIXES=(
   libdatrie
   libgraphite2
   libgst
+  # WebKit/GTK transitive deps: on rolling distros the host copies of these are
+  # newer and their symbols are pulled in by host WebKit/GTK/curl, so the older
+  # bundled versions break loading (undefined symbols / version mismatches).
+  libgpg-error
+  libp11-kit
+  libproxy
+  librsvg-2
+  libepoxy
+  libxkbcommon
+  libssh2
+  libX11
+  libXau
+  libXdmcp
+  libxcb
+  libxcb-render
+  libxcb-shm
+  libXcomposite
+  libXcursor
+  libXdamage
+  libXext
+  libXfixes
+  libXi
+  libXinerama
+  libXrandr
+  libXrender
+  libpixman-1
+  libpng16
+  libjpeg
+  libtiff
+  libwebp
+  libjbig
+  libbrotlicommon
+  libbrotlidec
+  libbz2
+  liblz4
+  liblzma
+  libzstd
+  libdeflate
+  libexpat
+  libbsd
+  libmd
+  libcap
 )
 
 should_remove() {

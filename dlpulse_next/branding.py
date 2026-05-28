@@ -14,7 +14,17 @@ ICON_URL_LIGHT = "/static/dlpulse_icon_light.svg"
 
 
 def window_icon_path() -> str | None:
-    """File path for pywebview / GTK window icon (PNG)."""
+    """File path for pywebview / GTK window icon.
+
+    On Windows pywebview uses ``System.Drawing.Icon`` which requires an .ico
+    file; passing a PNG crashes the WinForms backend with a .NET exception.
+    """
+    import sys
+
+    if sys.platform == "win32":
+        if ICON_ICO.is_file():
+            return str(ICON_ICO)
+        return None
     if ICON_PNG.is_file():
         return str(ICON_PNG)
     return None

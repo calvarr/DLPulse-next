@@ -1502,12 +1502,17 @@ def run_desktop() -> None:
                 _run_browser_only(reason=str(ex))
                 return
 
+        _log.info("Creating native window at %s", url)
         webview.create_window("DLPulse", url, width=1680, height=1020, resizable=True)
+        _log.info("Starting pywebview event loop (start_kw=%s)", list(start_kw))
         try:
             webview.start(**start_kw)
+            _log.info("pywebview event loop exited normally")
         except (WebViewException, ImportError, OSError, RuntimeError) as ex:
+            _log.exception("pywebview.start failed: %s", ex)
             _run_browser_only(reason=str(ex))
         except Exception as ex:
+            _log.exception("pywebview.start crashed: %s", ex)
             if sys.platform == "win32" or is_frozen():
                 _run_browser_only(reason=str(ex))
             raise

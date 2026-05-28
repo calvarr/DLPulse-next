@@ -1,6 +1,6 @@
 # Build DLPulse Next — Linux / Windows / macOS (PyInstaller)
 #
-# Outputs: NSIS installer (Windows), DMG (macOS). Linux: install from source (see README).
+# Outputs: NSIS installer (Windows), DMG (macOS), AppImage (Linux thin — uses host GTK/WebKit).
 # Bundles: yt-dlp, ffmpeg (imageio-ffmpeg), aria2c, Flask UI, pywebview.
 # Triggers: push to main/master, tags v*, manual workflow_dispatch.
 # Releases: v* tags → stable release; main/master → prerelease dlpulse-next-continuous.
@@ -35,6 +35,10 @@ jobs:
             target: macos
             artifact_name: dlpulse-next-macos
             artifact_file: build/DLPulseNext.dmg
+          - os: ubuntu-22.04
+            target: linux
+            artifact_name: dlpulse-next-linux
+            artifact_file: build/DLPulseNext-x86_64.AppImage
 
     runs-on: ${{ matrix.os }}
     name: DLPulse Next (${{ matrix.target }})
@@ -51,6 +55,22 @@ jobs:
         if: matrix.target == 'windows'
         shell: pwsh
         run: choco install nsis -y --no-progress
+
+      - name: Install Linux build deps (GTK + WebKit + GStreamer + appimagetool)
+        if: matrix.target == 'linux'
+        shell: bash
+        run: |
+          set -e
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            python3-dev python3-gi python3-gi-cairo \
+            gir1.2-gtk-3.0 gir1.2-webkit2-4.0 \
+            libgtk-3-0 libwebkit2gtk-4.0-37 \
+            libgirepository1.0-dev libcairo2-dev pkg-config \
+            gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+            ffmpeg aria2 file
+          # libfuse2 enables direct AppImage execution; on noble (24.04) it's libfuse2t64.
+          sudo apt-get install -y libfuse2 || sudo apt-get install -y libfuse2t64 || true
 
       - name: Optional donate images (standalone bundle)
         shell: bash
@@ -101,6 +121,16 @@ jobs:
         run: |
           set -e
           brew install aria2
+          mkdir -p packaging/binaries
+          cp "$(command -v aria2c)" packaging/binaries/aria2c
+          chmod +x packaging/binaries/aria2c
+          packaging/binaries/aria2c --version | head -1
+
+      - name: Stage aria2c for bundle (Linux)
+        if: matrix.target == 'linux'
+        shell: bash
+        run: |
+          set -e
           mkdir -p packaging/binaries
           cp "$(command -v aria2c)" packaging/binaries/aria2c
           chmod +x packaging/binaries/aria2c
@@ -206,6 +236,22 @@ jobs:
         shell: bash
         run: bash packaging/macos/make_dmg.sh .
 
+      - name: Build Linux AppImage
+        if: matrix.target == 'linux'
+        shell: bash
+        run: bash packaging/linux/make_appimage.sh .
+
+      - name: Smoke-test Linux AppImage
+        if: matrix.target == 'linux'
+        shell: bash
+        run: |
+          set -e
+          file build/DLPulseNext-x86_64.AppImage
+          # AppImage may not run from CI without FUSE; verify it extracts.
+          build/DLPulseNext-x86_64.AppImage --appimage-extract >/dev/null
+          ls squashfs-root/usr/bin/DLPulseNext
+          rm -rf squashfs-root
+
       - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
@@ -242,14 +288,14 @@ jobs:
           shopt -s nullglob
           for f in artifacts/* artifacts/**/*; do
             case "$f" in
-              *.exe|*.dmg) cp -f "$f" release-assets/ ;;
+              *.exe|*.dmg|*.AppImage) cp -f "$f" release-assets/ ;;
             esac
           done
           ls -la release-assets/
 
       - name: Verify release assets
         run: |
-          test "$(find release-assets -type f \( -name '*.exe' -o -name '*.dmg' \) | wc -l)" -ge 2
+          test "$(find release-assets -type f \( -name '*.exe' -o -name '*.dmg' -o -name '*.AppImage' \) | wc -l)" -ge 3
 
       - name: Move continuous tag (main/master)
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
@@ -282,8 +328,9 @@ jobs:
             |----------|------|
             | Windows | `DLPulseNext-Setup.exe` |
             | macOS | `DLPulseNext.dmg` |
+            | Linux | `DLPulseNext-x86_64.AppImage` |
 
-            **Linux:** install from source — see [README](https://github.com/calvarr/DLPulse-next#linux-install-from-source) (system GTK/WebKit/GStreamer + `pip install -e ".[webview-gtk]"`).
+            **Linux AppImage** needs host GTK3 + WebKit2GTK + GStreamer plugins installed (see [README — Linux](https://github.com/calvarr/DLPulse-next#linux)). For development, install from source.
 
             For a **stable** versioned release, push a tag `v*` (e.g. `v2.0.1`).
           prerelease: true

@@ -1449,9 +1449,9 @@ def run_desktop() -> None:
         webbrowser.open(url)
         if sys.platform == "win32" or is_frozen():
             if reason and get_ui_launch_mode() == "native":
-                set_ui_launch_mode("browser")
                 _log.warning(
-                    "Native window failed; switched to browser for next launch: %s", reason
+                    "Native window failed; using browser for this session (Settings still native): %s",
+                    reason,
                 )
             threading.Event().wait()
             return

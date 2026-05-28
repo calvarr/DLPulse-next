@@ -90,8 +90,11 @@ def configure_windows_pythonnet() -> Path | None:
     except Exception:
         pass
     # Prefer .NET Framework on Windows for pywebview WinForms interop.
-    # WebView2 WinForms bindings can fail under CoreCLR with missing legacy WinForms types.
-    os.environ.setdefault("PYTHONNET_RUNTIME", "netfx")
+    # WebView2 WinForms bindings fail under CoreCLR (missing ContextMenu, etc.).
+    if getattr(sys, "frozen", False):
+        os.environ["PYTHONNET_RUNTIME"] = "netfx"
+    else:
+        os.environ.setdefault("PYTHONNET_RUNTIME", "netfx")
 
     rt_dll = _find_python_runtime_dll()
     if rt_dll is not None:
@@ -208,4 +211,14 @@ def ensure_pythonnet_ready() -> None:
         raise RuntimeError(
             "pythonnet loaded but required WinForms assemblies are unavailable. Reinstall the latest "
             f"DLPulse Next build (includes .NET Desktop). Technical detail: {ex}"
+        ) from ex
+
+    try:
+        import webview.platforms.winforms as _winforms  # noqa: F401
+
+        _log.info("pywebview WinForms backend OK (renderer=%s)", getattr(_winforms, "renderer", "?"))
+    except Exception as ex:
+        raise RuntimeError(
+            "Native desktop window could not initialize (pywebview WinForms). "
+            f"Technical detail: {ex}"
         ) from ex

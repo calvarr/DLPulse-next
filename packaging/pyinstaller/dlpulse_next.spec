@@ -49,6 +49,15 @@ _aria2_staged = SPECDIR.parent / "binaries" / ("aria2c.exe" if sys.platform == "
 if _aria2_staged.is_file():
     _binaries.append((str(_aria2_staged), "."))
 
+# macOS: aria2 1.37 hard-loads OpenSSL's "legacy" provider on startup; bundle
+# the provider plug-in so the app runs on machines without Homebrew installed.
+# packaging/macos/make_dmg.sh patches its libcrypto reference and wraps aria2c
+# with a launcher that sets OPENSSL_MODULES to this directory.
+if sys.platform == "darwin":
+    _ossl_legacy = SPECDIR.parent / "binaries" / "ossl-modules" / "legacy.dylib"
+    if _ossl_legacy.is_file():
+        _binaries.append((str(_ossl_legacy), "ossl-modules"))
+
 if sys.platform.startswith("linux"):
     try:
         import gi as _gi_pkg

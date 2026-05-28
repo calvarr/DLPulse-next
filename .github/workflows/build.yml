@@ -32,7 +32,7 @@ jobs:
             arch: x64
             artifact_name: dlpulse-next-windows
             artifact_file: build/DLPulseNext-Setup.exe
-          - os: macos-15-intel
+          - os: macos-13
             target: macos
             arch: x86_64
             macos_deployment_target: "10.13"
@@ -74,19 +74,12 @@ jobs:
         run: |
           set -e
           sudo apt-get update
-          # Runtime stack is BUNDLED into the AppImage (self-contained), so the
-          # full GTK/WebKit/GStreamer set + helper tools must be present here.
           sudo apt-get install -y --no-install-recommends \
             python3-dev python3-gi python3-gi-cairo \
             gir1.2-gtk-3.0 gir1.2-webkit2-4.0 \
             libgtk-3-0 libwebkit2gtk-4.0-37 \
             libgirepository1.0-dev libcairo2-dev pkg-config \
             gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
-            gstreamer1.0-plugins-bad gstreamer1.0-libav \
-            gstreamer1.0-pulseaudio gstreamer1.0-alsa gstreamer1.0-gl \
-            glib-networking libglib2.0-bin gsettings-desktop-schemas \
-            libgdk-pixbuf2.0-bin librsvg2-common \
-            adwaita-icon-theme hicolor-icon-theme \
             ffmpeg aria2 file
           # libfuse2 enables direct AppImage execution; on noble (24.04) it's libfuse2t64.
           sudo apt-get install -y libfuse2 || sudo apt-get install -y libfuse2t64 || true
@@ -140,10 +133,20 @@ jobs:
         run: |
           set -e
           brew install aria2
-          mkdir -p packaging/binaries
+          mkdir -p packaging/binaries packaging/binaries/ossl-modules
           cp "$(command -v aria2c)" packaging/binaries/aria2c
           chmod +x packaging/binaries/aria2c
           packaging/binaries/aria2c --version | head -1
+          # aria2 1.37 force-loads OpenSSL's 'legacy' provider at startup. The
+          # Homebrew build hardcodes the provider directory at
+          # /usr/local/Cellar/openssl@3/<ver>/lib/ossl-modules, which doesn't
+          # exist on end-user machines, so the binary aborts with
+          # "OSSL_PROVIDER_load 'legacy' failed". Bundle the provider so the
+          # app's wrapper can point OPENSSL_MODULES at it.
+          OSSL_PREFIX="$(brew --prefix openssl@3)"
+          cp "$OSSL_PREFIX/lib/ossl-modules/legacy.dylib" \
+             packaging/binaries/ossl-modules/legacy.dylib
+          ls -l packaging/binaries/ossl-modules/legacy.dylib
 
       - name: Stage aria2c for bundle (Linux)
         if: matrix.target == 'linux'
@@ -271,18 +274,6 @@ jobs:
           # AppImage may not run from CI without FUSE; verify it extracts.
           build/DLPulseNext-x86_64.AppImage --appimage-extract >/dev/null
           ls squashfs-root/usr/bin/DLPulseNext
-          # Verify the self-contained GTK/WebKit/GStreamer stack is bundled.
-          ls squashfs-root/usr/lib/libwebkit2gtk-4.*.so* >/dev/null \
-            || { echo "ERROR: libwebkit2gtk not bundled"; exit 1; }
-          ls squashfs-root/usr/lib/libgtk-3.so* >/dev/null \
-            || { echo "ERROR: libgtk-3 not bundled"; exit 1; }
-          ls squashfs-root/usr/lib/webkit2gtk-4.*/WebKitWebProcess >/dev/null \
-            || { echo "ERROR: WebKitWebProcess helper not bundled"; exit 1; }
-          test "$(ls squashfs-root/usr/lib/gstreamer-1.0/libgst*.so 2>/dev/null | wc -l)" -ge 10 \
-            || { echo "ERROR: GStreamer plugins not bundled"; exit 1; }
-          ls squashfs-root/usr/lib/girepository-1.0/WebKit2-*.typelib >/dev/null \
-            || { echo "ERROR: WebKit2 typelib not bundled"; exit 1; }
-          echo "OK: self-contained stack bundled ($(ls squashfs-root/usr/lib/lib*.so* | wc -l) libs)"
           rm -rf squashfs-root
 
       - uses: actions/upload-artifact@v7

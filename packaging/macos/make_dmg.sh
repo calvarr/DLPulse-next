@@ -43,6 +43,40 @@ chmod +x "$APP/Contents/MacOS/DLPulseNext"
 # *.dist-info dirs that codesign mistakes for nested bundles).
 codesign --force --sign - "$APP/Contents/MacOS/DLPulseNext" 2>/dev/null || true
 
+# aria2 1.37 (Homebrew build) calls OSSL_PROVIDER_load("legacy") at startup,
+# which fails with "OSSL_PROVIDER_load 'legacy' failed" on machines without
+# Homebrew because libcrypto.3.dylib hardcodes
+# /usr/local/Cellar/openssl@3/<ver>/lib/ossl-modules as MODULESDIR. The CI
+# step "Stage aria2c for bundle (macOS)" copies legacy.dylib into
+# packaging/binaries/ossl-modules/, the spec file ships it as ossl-modules/
+# inside the PyInstaller _internal/, so it ends up at
+# Contents/Frameworks/ossl-modules/legacy.dylib here. Patch its libcrypto
+# install_name to be relative, and replace the aria2c binary with a tiny
+# wrapper that exports OPENSSL_MODULES before exec'ing the real binary.
+LEGACY="$APP/Contents/Frameworks/ossl-modules/legacy.dylib"
+ARIA="$APP/Contents/Frameworks/aria2c"
+if [[ -f "$LEGACY" ]] && [[ -f "$ARIA" ]]; then
+  echo "Patching aria2c OpenSSL legacy provider..."
+  CUR_LIBCRYPTO=$(otool -L "$LEGACY" | awk '/libcrypto/ {print $1; exit}')
+  if [[ -n "$CUR_LIBCRYPTO" ]] && [[ "$CUR_LIBCRYPTO" != "@loader_path/../libcrypto.3.dylib" ]]; then
+    install_name_tool -change "$CUR_LIBCRYPTO" \
+      "@loader_path/../libcrypto.3.dylib" "$LEGACY"
+  fi
+  if [[ ! -f "$APP/Contents/Frameworks/aria2c.real" ]]; then
+    mv "$ARIA" "$APP/Contents/Frameworks/aria2c.real"
+  fi
+  cat > "$ARIA" <<'WRAP'
+#!/bin/bash
+HERE="$(cd "$(dirname "$0")" && pwd)"
+export OPENSSL_MODULES="$HERE/ossl-modules"
+exec "$HERE/aria2c.real" "$@"
+WRAP
+  chmod +x "$ARIA"
+  codesign --force --sign - "$LEGACY" 2>/dev/null || true
+  codesign --force --sign - "$APP/Contents/Frameworks/aria2c.real" 2>/dev/null || true
+  echo "  aria2c -> wrapper, real binary -> aria2c.real, legacy provider patched"
+fi
+
 # yt-dlp expects ffmpeg/ffprobe with standard names (imageio ships ffmpeg-* only).
 PY="${PYTHON:-python3}"
 BIN_DIR="$APP/Contents/Resources/bin"

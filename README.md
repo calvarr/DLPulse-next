@@ -64,14 +64,14 @@ Newer builds run ffmpeg without a visible console and stop it when you close the
 
 ### Linux
 
-Two options — both need the same system packages (GTK3 + WebKit2GTK + GStreamer):
+- **AppImage** (`DLPulseNext-x86_64.AppImage` from [Releases](https://github.com/calvarr/DLPulse-next/releases)) — `chmod +x` and run. **Self-contained:** bundles GTK3 + WebKit2GTK + GStreamer and their dependencies, so it runs on any modern Linux **without installing extra packages**. Only a reasonably recent glibc is required (built on Ubuntu 22.04, so it runs on distros with glibc ≥ 2.35). The GPU/GL driver stack still comes from your system.
+- **From source** — `pip install -e ".[webview-gtk]"` then `python -m dlpulse_next` (best for development). This path **does** need the system packages below.
 
-- **AppImage** (`DLPulseNext-x86_64.AppImage` from [Releases](https://github.com/calvarr/DLPulse-next/releases)) — `chmod +x` and run. Thin bundle: uses your distro's GTK/WebKit/GStreamer.
-- **From source** — `pip install -e ".[webview-gtk]"` then `python -m dlpulse_next` (best for development).
+**Requirements:** the AppImage needs nothing extra. For the **from-source** path you need Python **3.11+**, pip, and the system packages below.
 
-**Requirements:** Python **3.11+** (only for the from-source path), pip, and the system packages below.
+#### 1. System dependencies (from-source only)
 
-#### 1. System dependencies
+> Skip this section if you are using the AppImage — it bundles everything.
 
 Pick **one** block for your distribution.
 

@@ -29,20 +29,32 @@ jobs:
         include:
           - os: windows-latest
             target: windows
+            arch: x64
             artifact_name: dlpulse-next-windows
             artifact_file: build/DLPulseNext-Setup.exe
-          - os: macos-latest
+          - os: macos-13
             target: macos
-            artifact_name: dlpulse-next-macos
-            artifact_file: build/DLPulseNext.dmg
+            arch: x86_64
+            macos_deployment_target: "10.13"
+            artifact_name: dlpulse-next-macos-x86_64
+            artifact_file: build/DLPulseNext-x86_64.dmg
+          - os: macos-14
+            target: macos
+            arch: arm64
+            macos_deployment_target: "11.0"
+            artifact_name: dlpulse-next-macos-arm64
+            artifact_file: build/DLPulseNext-arm64.dmg
           - os: ubuntu-22.04
             target: linux
+            arch: x86_64
             artifact_name: dlpulse-next-linux
             artifact_file: build/DLPulseNext-x86_64.AppImage
 
     runs-on: ${{ matrix.os }}
-    name: DLPulse Next (${{ matrix.target }})
+    name: DLPulse Next (${{ matrix.target }}-${{ matrix.arch }})
     timeout-minutes: 90
+    env:
+      MACOSX_DEPLOYMENT_TARGET: ${{ matrix.macos_deployment_target }}
 
     steps:
       - uses: actions/checkout@v6
@@ -234,6 +246,8 @@ jobs:
       - name: Build macOS DMG
         if: matrix.target == 'macos'
         shell: bash
+        env:
+          DMG_ARCH: ${{ matrix.arch }}
         run: bash packaging/macos/make_dmg.sh .
 
       - name: Build Linux AppImage
@@ -295,7 +309,7 @@ jobs:
 
       - name: Verify release assets
         run: |
-          test "$(find release-assets -type f \( -name '*.exe' -o -name '*.dmg' -o -name '*.AppImage' \) | wc -l)" -ge 3
+          test "$(find release-assets -type f \( -name '*.exe' -o -name '*.dmg' -o -name '*.AppImage' \) | wc -l)" -ge 4
 
       - name: Move continuous tag (main/master)
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
@@ -327,7 +341,8 @@ jobs:
             | Platform | File |
             |----------|------|
             | Windows | `DLPulseNext-Setup.exe` |
-            | macOS | `DLPulseNext.dmg` |
+            | macOS (Intel) | `DLPulseNext-x86_64.dmg` |
+            | macOS (Apple Silicon) | `DLPulseNext-arm64.dmg` |
             | Linux | `DLPulseNext-x86_64.AppImage` |
 
             **Linux AppImage** needs host GTK3 + WebKit2GTK + GStreamer plugins installed (see [README — Linux](https://github.com/calvarr/DLPulse-next#linux)). For development, install from source.

@@ -30,7 +30,10 @@ Download from **[GitHub Releases](https://github.com/calvarr/DLPulse-next/releas
 | Platform | File | Notes |
 |----------|------|--------|
 | **Windows** | `DLPulseNext-Setup.exe` | Bundles yt-dlp, ffmpeg, aria2c, WebView2 UI |
-| **macOS** | `DLPulseNext.dmg` | Bundles yt-dlp, ffmpeg, aria2c, WKWebView UI |
+| **macOS — Intel** | `DLPulseNext-x86_64.dmg` | For Intel Macs (macOS 10.13+). Bundles yt-dlp, ffmpeg, aria2c, WKWebView UI |
+| **macOS — Apple Silicon** | `DLPulseNext-arm64.dmg` | For M1/M2/M3/M4 Macs (macOS 11+). Bundles yt-dlp, ffmpeg, aria2c, WKWebView UI |
+
+> If you double‑click the DMG and macOS says **"not compatible with this Mac"**, you downloaded the wrong architecture. Use `DLPulseNext-x86_64.dmg` on Intel Macs and `DLPulseNext-arm64.dmg` on Apple Silicon. Run `uname -m` in Terminal to check (`x86_64` = Intel, `arm64` = Apple Silicon).
 
 **Windows:** run the installer **as Administrator** (right-click → **Run as administrator**), then launch from the Start menu. The setup **bundles .NET Desktop Runtime 8 (x64)** and **Microsoft Edge WebView2** next to the app under `C:\Program Files\DLPulse Next\` — you do **not** need to install them separately. Installer size is larger (~300–500 MB) because of these runtimes.
 
@@ -209,7 +212,7 @@ pyinstaller packaging/pyinstaller/dlpulse_next.spec
 | Platform | Script | Output |
 |----------|--------|--------|
 | Windows | `pwsh packaging/windows/build_installer.ps1` | `build/DLPulseNext-Setup.exe` |
-| macOS | `bash packaging/macos/make_dmg.sh` | `build/DLPulseNext.dmg` |
+| macOS | `bash packaging/macos/make_dmg.sh` | `build/DLPulseNext-<arch>.dmg` (where `<arch>` is `x86_64` or `arm64`, auto-detected via `uname -m`; override with `DMG_ARCH=`) |
 
 CI builds Windows installer, macOS DMG, and Linux AppImage on push to `main` and on tags `v*`.
 

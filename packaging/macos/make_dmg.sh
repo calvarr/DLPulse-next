@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Build .app + DMG from PyInstaller onedir: dist/DLPulseNext/
 # Usage: bash packaging/macos/make_dmg.sh [repo_root]
+# Env:
+#   DMG_ARCH   Override architecture suffix (x86_64 | arm64). Defaults to `uname -m`.
+#   MIN_MACOS  LSMinimumSystemVersion for Info.plist (defaults: 10.13 on x86_64, 11.0 on arm64).
 set -euo pipefail
 ROOT="$(cd "${1:-.}" && pwd)"
 cd "$ROOT"
@@ -10,6 +13,14 @@ if [[ ! -d "$BUNDLE" ]] || [[ ! -f "$BUNDLE/DLPulseNext" ]]; then
   echo "Missing PyInstaller bundle at $BUNDLE/DLPulseNext" >&2
   exit 1
 fi
+
+ARCH="${DMG_ARCH:-$(uname -m)}"
+case "$ARCH" in
+  x86_64|amd64) ARCH="x86_64"; DEFAULT_MIN_MACOS="10.13" ;;
+  arm64|aarch64) ARCH="arm64"; DEFAULT_MIN_MACOS="11.0" ;;
+  *) echo "Unsupported arch: $ARCH" >&2; exit 1 ;;
+esac
+MIN_MACOS="${MIN_MACOS:-$DEFAULT_MIN_MACOS}"
 
 APP="build/DLPulseNext.app"
 rm -rf "$APP"
@@ -43,7 +54,7 @@ if [[ -f "$ICON" ]]; then
   cp -f "$ICON" "$APP/Contents/Resources/dlpulse_icon.png"
 fi
 
-cat > "$APP/Contents/Info.plist" <<'EOF'
+cat > "$APP/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -64,12 +75,14 @@ cat > "$APP/Contents/Info.plist" <<'EOF'
   <string>1</string>
   <key>NSHighResolutionCapable</key>
   <true/>
+  <key>LSMinimumSystemVersion</key>
+  <string>${MIN_MACOS}</string>
 </dict>
 </plist>
 EOF
 
-OUT="build/DLPulseNext.dmg"
+OUT="build/DLPulseNext-${ARCH}.dmg"
 mkdir -p build
 rm -f "$OUT"
-hdiutil create -volname "DLPulse Next" -srcfolder "$APP" -ov -format UDZO "$OUT"
-echo "DMG: $(pwd)/$OUT"
+hdiutil create -volname "DLPulse Next (${ARCH})" -srcfolder "$APP" -ov -format UDZO "$OUT"
+echo "DMG: $(pwd)/$OUT (arch=${ARCH}, min macOS=${MIN_MACOS})"

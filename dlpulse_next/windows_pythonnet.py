@@ -182,8 +182,11 @@ def ensure_pythonnet_ready() -> None:
         import clr as _clr
 
         _clr.AddReference("System.Windows.Forms")
+        # pywebview/winforms imports `SystemEvents` from `Microsoft.Win32` at module import time.
+        # On some bundled CoreCLR setups this assembly is not auto-resolved unless preloaded.
+        _clr.AddReference("Microsoft.Win32.SystemEvents")
     except Exception as ex:
         raise RuntimeError(
-            "pythonnet loaded but System.Windows.Forms is unavailable. Reinstall the latest "
+            "pythonnet loaded but required WinForms assemblies are unavailable. Reinstall the latest "
             f"DLPulse Next build (includes .NET Desktop). Technical detail: {ex}"
         ) from ex

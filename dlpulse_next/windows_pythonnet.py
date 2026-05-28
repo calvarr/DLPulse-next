@@ -89,7 +89,9 @@ def configure_windows_pythonnet() -> Path | None:
         apply_bundled_windows_runtimes()
     except Exception:
         pass
-    os.environ.setdefault("PYTHONNET_RUNTIME", "coreclr")
+    # Prefer .NET Framework on Windows for pywebview WinForms interop.
+    # WebView2 WinForms bindings can fail under CoreCLR with missing legacy WinForms types.
+    os.environ.setdefault("PYTHONNET_RUNTIME", "netfx")
 
     rt_dll = _find_python_runtime_dll()
     if rt_dll is not None:
@@ -129,6 +131,24 @@ def bootstrap_pythonnet() -> None:
         os.environ["DOTNET_ROOT"] = root_s
         os.environ["PYTHONNET_CORECLR_DOTNET_ROOT"] = root_s
 
+    try:
+        from pythonnet import load
+    except Exception as ex:
+        _log.warning("pythonnet import failed (%s); relying on env vars", ex)
+        _bootstrapped = True
+        return
+
+    runtime_pref = (os.environ.get("PYTHONNET_RUNTIME") or "").strip().lower() or "netfx"
+    if runtime_pref == "netfx":
+        try:
+            load("netfx")
+            _log.info("pythonnet.load(netfx) OK")
+            _bootstrapped = True
+            return
+        except Exception as ex:
+            _log.warning("pythonnet.load(netfx) failed (%s); trying coreclr", ex)
+            os.environ["PYTHONNET_RUNTIME"] = "coreclr"
+
     load_kw: dict[str, str] = {}
     if cfg_path is not None:
         load_kw["runtime_config"] = str(cfg_path)
@@ -136,12 +156,10 @@ def bootstrap_pythonnet() -> None:
         load_kw["dotnet_root"] = str(dotnet_root)
 
     try:
-        from pythonnet import load
-
         load("coreclr", **load_kw)
         _log.info("pythonnet.load(coreclr) OK dotnet_root=%s", dotnet_root)
     except Exception as ex:
-        _log.warning("pythonnet.load failed (%s); relying on env vars", ex)
+        _log.warning("pythonnet.load(coreclr) failed (%s); relying on env vars", ex)
 
     _bootstrapped = True
 
@@ -183,8 +201,9 @@ def ensure_pythonnet_ready() -> None:
 
         _clr.AddReference("System.Windows.Forms")
         # pywebview/winforms imports `SystemEvents` from `Microsoft.Win32` at module import time.
-        # On some bundled CoreCLR setups this assembly is not auto-resolved unless preloaded.
-        _clr.AddReference("Microsoft.Win32.SystemEvents")
+        # Preload it on CoreCLR where assembly resolution can fail without an explicit reference.
+        if (os.environ.get("PYTHONNET_RUNTIME") or "").strip().lower() == "coreclr":
+            _clr.AddReference("Microsoft.Win32.SystemEvents")
     except Exception as ex:
         raise RuntimeError(
             "pythonnet loaded but required WinForms assemblies are unavailable. Reinstall the latest "

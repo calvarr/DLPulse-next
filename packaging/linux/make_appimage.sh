@@ -155,30 +155,101 @@ done
 
 # ---------------------------------------------------------------------------
 # WebKit helper processes + injected bundle (separate executables).
+#
+# WebKitGTK hardcodes the ABSOLUTE path to its helper binaries
+# (WebKitNetworkProcess / WebKitWebProcess / WebKitGPUProcess) into
+# libwebkit2gtk*.so at build time (PKGLIBEXECDIR). WEBKIT_EXEC_PATH only
+# overrides it when WebKit was built in "developer mode", which distro packages
+# are NOT — so on any host without that exact path the app crashes with
+# "Failed to spawn child process .../WebKitNetworkProcess".
+#
+# Fix (same approach as Tauri/Wails AppImages): mirror the helpers under the
+# AppDir at the SAME relative path as the host's absolute dir, then binary-patch
+# the hardcoded absolute path inside the .so to the equivalent RELATIVE path
+# (drop leading "/", keep byte length so the ELF stays valid). AppRun then runs
+# with CWD set to the AppDir so the relative path resolves into the bundle.
 # ---------------------------------------------------------------------------
-WK_LIBEXEC="$APPDIR/usr/lib/webkit2gtk-${WK_VER}"
-mkdir -p "$WK_LIBEXEC"
+# Real on-disk location of the helper binaries (may differ from the path
+# hardcoded into libwebkit, e.g. /usr/lib64 symlink vs /usr/lib).
 WK_HELPER_SRC=""
 for d in \
   "$HOSTLIB/webkit2gtk-${WK_VER}" \
   "/usr/libexec/webkit2gtk-${WK_VER}" \
-  "/usr/lib/webkit2gtk-${WK_VER}"; do
+  "/usr/lib/webkit2gtk-${WK_VER}" \
+  "/usr/lib64/webkit2gtk-${WK_VER}" \
+  "/usr/lib/x86_64-linux-gnu/webkit2gtk-${WK_VER}"; do
   if [[ -d "$d" ]]; then WK_HELPER_SRC="$d"; break; fi
 done
-if [[ -n "$WK_HELPER_SRC" ]]; then
-  for f in WebKitWebProcess WebKitNetworkProcess MiniBrowser; do
-    [[ -f "$WK_HELPER_SRC/$f" ]] && { cp -L "$WK_HELPER_SRC/$f" "$WK_LIBEXEC/"; bundle_with_deps "$WK_HELPER_SRC/$f"; }
-  done
-  if [[ -d "$WK_HELPER_SRC/injected-bundle" ]]; then
-    mkdir -p "$WK_LIBEXEC/injected-bundle"
-    cp -aL "$WK_HELPER_SRC/injected-bundle/." "$WK_LIBEXEC/injected-bundle/"
-    for so in "$WK_LIBEXEC/injected-bundle"/*.so*; do
-      [[ -e "$so" ]] && bundle_with_deps "$so"
+
+# Discover the absolute helper dir(s) hardcoded inside libwebkit (PKGLIBEXECDIR).
+mapfile -t WK_ABS_DIRS < <(
+  WK_VER="$WK_VER" python3 - "$LIBDIR"/libwebkit2gtk-*.so* "$LIBDIR"/libjavascriptcoregtk-*.so* <<'PY'
+import os, re, sys
+ver = os.environ["WK_VER"].encode()
+# Absolute path strings whose final segment is exactly "webkit2gtk-<ver>".
+pat = re.compile(rb"/[A-Za-z0-9_./+-]*?/webkit2gtk-" + re.escape(ver) + rb"(?=\x00)")
+found = set()
+for p in sys.argv[1:]:
+    try:
+        data = open(p, "rb").read()
+    except OSError:
+        continue
+    for m in pat.finditer(data):
+        s = m.group(0)
+        if s.split(b"/")[-1] == b"webkit2gtk-" + ver:
+            found.add(s.decode())
+for s in sorted(found):
+    print(s)
+PY
+)
+
+WK_REL_DIR="usr/lib/webkit2gtk-${WK_VER}"
+if [[ -n "$WK_HELPER_SRC" && ${#WK_ABS_DIRS[@]} -gt 0 ]]; then
+  # Mirror the helpers under the AppDir at the SAME relative path as each
+  # hardcoded absolute dir, then binary-patch that absolute path to the relative
+  # form ("/<rel>" len N -> "<rel>/" len N, byte length preserved).
+  for ABS_DIR in "${WK_ABS_DIRS[@]}"; do
+    REL_NOSLASH="${ABS_DIR#/}"
+    DST="$APPDIR/$REL_NOSLASH"
+    mkdir -p "$DST"
+    for f in WebKitWebProcess WebKitNetworkProcess WebKitGPUProcess MiniBrowser; do
+      [[ -f "$WK_HELPER_SRC/$f" ]] && { cp -L "$WK_HELPER_SRC/$f" "$DST/"; bundle_with_deps "$WK_HELPER_SRC/$f"; }
     done
-  fi
-  echo "Bundled WebKit helpers from $WK_HELPER_SRC"
+    if [[ -d "$WK_HELPER_SRC/injected-bundle" ]]; then
+      mkdir -p "$DST/injected-bundle"
+      cp -aL "$WK_HELPER_SRC/injected-bundle/." "$DST/injected-bundle/"
+      for so in "$DST/injected-bundle"/*.so*; do
+        [[ -e "$so" ]] && bundle_with_deps "$so"
+      done
+    fi
+    WK_REL_DIR="$REL_NOSLASH"
+    echo "Mirrored WebKit helpers -> $REL_NOSLASH (from $WK_HELPER_SRC)"
+  done
+
+  patched_total=0
+  for lib in "$LIBDIR"/libwebkit2gtk-*.so* "$LIBDIR"/libjavascriptcoregtk-*.so*; do
+    [[ -e "$lib" ]] || continue
+    for ABS_DIR in "${WK_ABS_DIRS[@]}"; do
+      if ABS="$ABS_DIR" REL="${ABS_DIR#/}/" python3 - "$lib" <<'PY'
+import os, sys
+path = sys.argv[1]
+abs_b = os.environ["ABS"].encode()
+rel_b = os.environ["REL"].encode()
+if len(abs_b) != len(rel_b):
+    sys.exit(2)
+data = open(path, "rb").read()
+if abs_b not in data:
+    sys.exit(1)
+open(path, "wb").write(data.replace(abs_b, rel_b))
+PY
+      then
+        patched_total=$((patched_total + 1))
+      fi
+    done
+  done
+  echo "Patched WebKit exec path in $patched_total lib(s): ${WK_ABS_DIRS[*]} -> relative"
 else
-  echo "WARN: WebKit helper process dir not found; web view may fail." >&2
+  echo "WARN: WebKit helper dir not found (src='$WK_HELPER_SRC', hardcoded=${WK_ABS_DIRS[*]:-none}); web view may fail." >&2
 fi
 
 # ---------------------------------------------------------------------------
@@ -358,6 +429,7 @@ export DLPULSE_WEBKIT_VER="${WK_VER}"
 export DLPULSE_SOUP_VER="${SOUP_VER}"
 
 WK_VER="${WK_VER}"
+WK_REL_DIR="${WK_REL_DIR:-usr/lib/webkit2gtk-${WK_VER}}"
 
 export PATH="\$HERE/usr/bin:\${PATH:-}"
 export LANG="\${LANG:-en_US.UTF-8}"
@@ -382,9 +454,12 @@ export GSETTINGS_SCHEMA_DIR="\$HERE/usr/share/glib-2.0/schemas"
 # Icons / fonts (fonts use host config via fontconfig).
 export XDG_DATA_DIRS="\$HERE/usr/share:\${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
 
-# WebKit: use bundled helper processes + injected bundle; sandbox off (no bwrap).
-export WEBKIT_EXEC_PATH="\$HERE/usr/lib/webkit2gtk-\${WK_VER}"
-export WEBKIT_INJECTED_BUNDLE_PATH="\$HERE/usr/lib/webkit2gtk-\${WK_VER}/injected-bundle"
+# WebKit: helper-process path is binary-patched into libwebkit to the relative
+# dir below, which resolves against CWD — so AppRun must chdir to \$HERE (done
+# right before exec). WEBKIT_EXEC_PATH/INJECTED_BUNDLE_PATH are also set as a
+# best effort (honoured only on developer-mode WebKit builds). Sandbox off.
+export WEBKIT_EXEC_PATH="\$HERE/\${WK_REL_DIR}"
+export WEBKIT_INJECTED_BUNDLE_PATH="\$HERE/\${WK_REL_DIR}/injected-bundle"
 export WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1
 export WEBKIT_DISABLE_COMPOSITING_MODE=1
 
@@ -396,6 +471,10 @@ _gst_cache="\${XDG_CACHE_HOME:-\$HOME/.cache}/dlpulse-next"
 if mkdir -p "\$_gst_cache" 2>/dev/null; then
   export GST_REGISTRY="\$_gst_cache/gstreamer-registry.bin"
 fi
+
+# CWD must be the AppDir so the relative WebKit helper path (binary-patched into
+# libwebkit) resolves into the bundle. The app uses absolute paths internally.
+cd "\$HERE" 2>/dev/null || true
 
 exec "\$HERE/usr/bin/DLPulseNext" "\$@"
 EOS

@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
 from urllib.parse import quote
 
-from flask import Flask, Response, jsonify, request, send_file, send_from_directory
+from flask import Flask, Response, jsonify, request, send_file, send_from_directory, stream_with_context
 
 import atexit
 import logging
@@ -31,6 +31,7 @@ from dlpulse_next.cast_http import (
     is_cast_server_running,
     media_url,
     internal_relay_urls_for_pages,
+    playback_proxy_path,
     prewarm_remote_stream_extractions,
     register_media_path,
     start_cast_server,
@@ -94,6 +95,7 @@ from dlpulse_next.yt_core import (
     youtube_url_for_single_video_download,
 )
 from dlpulse_next.library_scan import scan_library
+from dlpulse_next.media_paths import cover_mimetype, find_cover_for_media
 from dlpulse_next.file_browser import (
     browse as fs_browse,
     delete_item as fs_delete,
@@ -211,6 +213,66 @@ def _ensure_stream_server() -> int:
     if port <= 0:
         raise RuntimeError("Local stream server failed to start.")
     return port
+
+
+def _proxy_playback_to_cast_server(subpath: str):
+    """Same-origin relay: UI server ``/playback/…`` → cast HTTP server (macOS WebKit)."""
+    from urllib.request import Request, urlopen
+
+    try:
+        port = _ensure_stream_server()
+    except Exception as e:
+        return _json_error(str(e), 503)
+
+    qs = request.query_string.decode()
+    target = f"http://127.0.0.1:{port}/{subpath.lstrip('/')}"
+    if qs:
+        target += "?" + qs
+
+    fwd: dict[str, str] = {}
+    for key in ("Range", "User-Agent", "Accept", "Accept-Language", "If-Range"):
+        val = request.headers.get(key)
+        if val:
+            fwd[key] = val
+
+    try:
+        upstream = urlopen(Request(target, headers=fwd, method=request.method), timeout=180)
+    except Exception as e:
+        _log.warning("playback proxy failed %s: %s", target[:120], e)
+        return _json_error(str(e), 502)
+
+    skip_headers = frozenset(
+        {"connection", "transfer-encoding", "content-encoding", "keep-alive", "proxy-authenticate"}
+    )
+    out_headers: dict[str, str] = {}
+    for key, val in upstream.headers.items():
+        if key.lower() in skip_headers:
+            continue
+        out_headers[key] = val
+
+    status = getattr(upstream, "status", None) or upstream.getcode() or 200
+
+    if request.method == "HEAD":
+        try:
+            upstream.close()
+        except Exception:
+            pass
+        return Response(status=status, headers=out_headers)
+
+    def _gen():
+        try:
+            while True:
+                chunk = upstream.read(65536)
+                if not chunk:
+                    break
+                yield chunk
+        finally:
+            try:
+                upstream.close()
+            except Exception:
+                pass
+
+    return Response(stream_with_context(_gen()), status=status, headers=out_headers)
 
 
 def _default_player_argv(for_audio: bool) -> list[str] | None:
@@ -461,6 +523,10 @@ def create_app() -> Flask:
     @app.route("/")
     def index():
         return send_from_directory(_PKG / "static", "index.html")
+
+    @app.route("/playback/<path:subpath>", methods=["GET", "HEAD"])
+    def playback_proxy(subpath: str):
+        return _proxy_playback_to_cast_server(subpath)
 
     @app.get("/api/donate/qr.svg")
     def api_donate_qr_svg():
@@ -841,7 +907,8 @@ def create_app() -> Flask:
         if not rel:
             return _json_error("Could not resolve a stream URL", 502)
 
-        return jsonify({"ok": True, "urls": rel, "port": port})
+        proxied = [playback_proxy_path(u) for u in rel]
+        return jsonify({"ok": True, "urls": proxied, "port": port})
 
     @app.get("/api/library")
     def api_library():
@@ -950,11 +1017,31 @@ def create_app() -> Flask:
         host = str(data.get("host") or "127.0.0.1")
         urls: list[str] = []
         labels: list[str] = []
+        covers: list[str | None] = []
         for p in plist:
             rel = register_media_path(p.resolve())
-            urls.append(media_url(rel, host, port))
+            raw = media_url(rel, host, port)
+            urls.append(playback_proxy_path(raw))
             labels.append(p.name)
-        return jsonify({"ok": True, "urls": urls, "labels": labels, "port": port})
+            cov = find_cover_for_media(p)
+            covers.append(f"/api/library/cover?path={quote(str(p.resolve()), safe='')}" if cov else None)
+        return jsonify({"ok": True, "urls": urls, "labels": labels, "covers": covers, "port": port})
+
+    @app.get("/api/library/cover")
+    def api_library_cover():
+        raw = str(request.args.get("path") or "").strip()
+        p = _resolve_library_path_arg(raw)
+        if p is None or not p.is_file():
+            return _json_error("File not found", 404)
+        cover = find_cover_for_media(p)
+        if cover is None or not cover.is_file():
+            return _json_error("No cover", 404)
+        try:
+            if not _path_allowed_for_library(cover):
+                return _json_error("Forbidden", 403)
+        except Exception:
+            return _json_error("Forbidden", 403)
+        return send_file(cover, mimetype=cover_mimetype(cover))
 
     @app.post("/api/library/play")
     def api_library_play():

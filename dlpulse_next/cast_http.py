@@ -1096,6 +1096,24 @@ def stop_cast_server() -> None:
     _server_thread = None
 
 
+def playback_proxy_path(relay_url: str) -> str:
+    """
+    Map ``http://host:port/path?query`` to ``/playback/path?query`` for same-origin
+    in-app HTML5 playback (WebKit on macOS often blocks cross-port media).
+    """
+    try:
+        p = urlparse((relay_url or "").strip())
+    except Exception:
+        return relay_url
+    path = (p.path or "").lstrip("/")
+    if not path:
+        return relay_url
+    out = f"/playback/{path}"
+    if p.query:
+        out += "?" + p.query
+    return out
+
+
 def media_url(relative_under_downloads: str, lan_ip: str, port: int) -> str:
     from urllib.parse import quote
 

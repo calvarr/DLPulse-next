@@ -102,7 +102,7 @@
       <div class="status" id="lib-empty" style="display:none;margin-bottom:8px"></div>
       <div class="results-wrap">
         <table class="results-table lib-table">
-          <thead><tr><th class="th-lib-cb"></th><th>File</th><th>Info</th></tr></thead>
+          <thead><tr><th class="th-thumb"></th><th class="th-lib-cb"></th><th>File</th><th>Info</th></tr></thead>
           <tbody id="lib-body"></tbody>
         </table>
       </div>
@@ -118,6 +118,10 @@
         <img id="player-audio-brand" class="player-audio-brand" src="/static/dlpulse_icon.svg" width="160" height="160" alt="" aria-hidden="true" data-themed-icon="app" />
       </div>
       <p class="player-now-playing" id="player-now-playing" hidden aria-live="polite"></p>
+      <div class="player-queue-panel" id="player-queue-panel" hidden>
+        <h3 class="player-queue-heading">Playlist</h3>
+        <ol class="player-queue-list" id="player-queue-list"></ol>
+      </div>
       <div class="row player-queue-row" id="player-queue-row" hidden style="margin-top:10px;flex-wrap:wrap;align-items:center;gap:8px">
         <button type="button" class="ghost" id="btn-int-repeat" data-btn-icon="repeat" title="Repeat mode">Repeat: off</button>
         <button type="button" class="ghost" id="btn-int-shuf" data-btn-icon="shuffle" title="Shuffle remaining tracks">Shuffle: off</button>

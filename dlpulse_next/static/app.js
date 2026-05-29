@@ -132,6 +132,10 @@ let formatPresets = [];
 let _internalRelayQueue = [];
 /** @type {string[]} Display titles parallel to `_internalRelayQueue`. */
 let _internalRelayTitles = [];
+/** @type {(string|null)[]} Cover URLs parallel to `_internalRelayQueue`. */
+let _internalRelayCovers = [];
+/** @type {(string|null)[]} Original covers for unshuffle. */
+let _internalRelayCoversBase = [];
 /** @type {string[]} Original URL order for this session (unshuffle). */
 let _internalRelayQueueBase = [];
 /** @type {string[]} Original titles for unshuffle. */
@@ -143,6 +147,8 @@ let _internalShuffleOn = false;
 const _INTERNAL_REPEAT_LABELS = ["off", "all", "one"];
 /** @type {(() => void) | null} */
 let _onInternalPlayerEnded = null;
+/** @type {(() => void) | null} */
+let _onInternalPlayerError = null;
 /** @type {string|null} */
 let lastCastMediaToken = null;
 /** @type {{ cast_stream_url: string, label: string }[]} */
@@ -220,6 +226,109 @@ function initShowAllFilesPreference() {
   $("fs-show-all-files")?.addEventListener("change", onShowAllChange);
 }
 
+function isAudioPlaybackUrl(url) {
+  try {
+    const path = new URL(url, window.location.origin).pathname.toLowerCase();
+    return /\.(mp3|m4a|aac|flac|ogg|opus|wav|wma|m4b|alac|aiff|aif|ape|wv)(?:\?|$)/.test(path);
+  } catch (_) {
+    return /\.(mp3|m4a|aac|flac|ogg|opus|wav)(?:\?|$)/i.test(String(url || ""));
+  }
+}
+
+function queueUsesAudioElement(urls) {
+  const list = (urls || []).filter(Boolean);
+  return list.length > 0 && list.every((u) => isAudioPlaybackUrl(u));
+}
+
+function activeInternalMediaEl() {
+  const a = $("a");
+  if (a && a.style.display !== "none" && (a.src || a.currentSrc)) return a;
+  return $("v");
+}
+
+function renderPlayerQueueList() {
+  const panel = $("player-queue-panel");
+  const listEl = $("player-queue-list");
+  if (!panel || !listEl) return;
+  const len = _internalRelayQueue.length;
+  if (len <= 1) {
+    panel.hidden = true;
+    listEl.innerHTML = "";
+    return;
+  }
+  panel.hidden = false;
+  listEl.innerHTML = "";
+  for (let i = 0; i < len; i++) {
+    const li = document.createElement("li");
+    li.className = "player-queue-item" + (i === _internalRelayIdx ? " is-current" : "");
+    li.dataset.index = String(i);
+
+    const cover = (_internalRelayCovers[i] || "").trim();
+    const im = document.createElement("img");
+    im.className = "player-queue-item-thumb";
+    im.alt = "";
+    if (cover) {
+      im.src = cover;
+      im.onerror = () => {
+        im.onerror = null;
+        im.src = appIconUrl();
+        im.classList.add("is-placeholder");
+      };
+    } else {
+      im.src = appIconUrl();
+      im.classList.add("is-placeholder");
+      im.setAttribute("data-themed-icon", "app");
+    }
+    li.appendChild(im);
+
+    const body = document.createElement("div");
+    body.className = "player-queue-item-body";
+    const title = document.createElement("div");
+    title.className = "player-queue-item-title";
+    const label = (_internalRelayTitles[i] || "").trim() || `Track ${i + 1}`;
+    title.textContent = label;
+    title.title = label;
+    const meta = document.createElement("div");
+    meta.className = "player-queue-item-meta";
+    meta.textContent = `${i + 1} / ${len}`;
+    body.appendChild(title);
+    body.appendChild(meta);
+    li.appendChild(body);
+
+    li.addEventListener("click", () => {
+      const idx = parseInt(li.dataset.index || "", 10);
+      if (Number.isNaN(idx) || idx < 0 || idx >= _internalRelayQueue.length) return;
+      if (idx === _internalRelayIdx) return;
+      jumpInternalRelayToIndex(idx);
+    });
+    listEl.appendChild(li);
+  }
+}
+
+async function jumpInternalRelayToIndex(idx) {
+  const el = activeInternalMediaEl();
+  if (!el || idx < 0 || idx >= _internalRelayQueue.length) return;
+  _internalRelayIdx = idx;
+  el.src = _internalRelayQueue[idx];
+  attachInternalPlayerHooks();
+  attachInternalPlayerErrorHook();
+  ensurePlayerAudible(el);
+  try {
+    await el.play();
+  } catch (_) {
+    /* user can press play */
+  }
+  ensurePlayerAudible(el);
+  updatePlayerNowPlaying();
+  renderPlayerQueueList();
+  syncPlayerNoCoverPlaceholder(el);
+  setStatus($("player-status"), `Playing ${_internalRelayIdx + 1} of ${_internalRelayQueue.length}…`, "");
+}
+
+function updatePlayerQueuePanelVisibility() {
+  renderPlayerQueueList();
+}
+
 function titleFromStreamUrl(url) {
   try {
     const u = new URL(url, window.location.origin);
@@ -265,10 +374,31 @@ function clearPlayerNowPlaying() {
 
 function syncPlayerNoCoverPlaceholder(v) {
   const ph = $("player-audio-brand");
-  if (!ph || !v) return;
-  const hasCoverOrVideo = v.videoWidth > 0 && v.videoHeight > 0;
+  if (!ph) return;
+  const el = v || activeInternalMediaEl();
+  const cover = (_internalRelayCovers[_internalRelayIdx] || "").trim();
+  if (cover) {
+    ph.src = cover;
+    ph.classList.add("is-visible");
+    ph.classList.remove("is-cover-art");
+    ph.onerror = () => {
+      ph.onerror = null;
+      ph.src = appIconUrl();
+      ph.classList.add("is-visible");
+    };
+    return;
+  }
+  if (!el) {
+    ph.classList.add("is-visible");
+    ph.src = appIconUrl();
+    return;
+  }
+  const hasCoverOrVideo = el.videoWidth > 0 && el.videoHeight > 0;
   if (hasCoverOrVideo) ph.classList.remove("is-visible");
-  else ph.classList.add("is-visible");
+  else {
+    ph.src = appIconUrl();
+    ph.classList.add("is-visible");
+  }
 }
 
 /** @type {(() => void) | null} */
@@ -1196,11 +1326,28 @@ async function refreshLibrary() {
     tb.innerHTML = "";
     items.forEach((it) => {
     const tr = document.createElement("tr");
+    const tdThumb = document.createElement("td");
+    if (it.cover_url) {
+      const im = document.createElement("img");
+      im.className = "thumb";
+      im.src = it.cover_url;
+      im.alt = "";
+      im.onerror = () => {
+        im.onerror = null;
+        im.src = appIconUrl();
+        im.classList.add("thumb-app-icon");
+        im.setAttribute("data-themed-icon", "app");
+      };
+      tdThumb.appendChild(im);
+    } else {
+      appendAppIconThumb(tdThumb);
+    }
     const td0 = document.createElement("td");
     const cb = document.createElement("input");
     cb.type = "checkbox";
     cb.className = "lib-cb";
     cb.setAttribute("data-path", it.path || "");
+    if (it.cover_url) cb.setAttribute("data-cover", it.cover_url);
     td0.appendChild(cb);
 
     const td1 = document.createElement("td");
@@ -1212,6 +1359,7 @@ async function refreshLibrary() {
     td2.style.color = "var(--muted)";
     td2.textContent = it.subtitle || "";
 
+    tr.appendChild(tdThumb);
     tr.appendChild(td0);
     tr.appendChild(td1);
     tr.appendChild(td2);
@@ -1257,7 +1405,7 @@ $("lib-play").addEventListener("click", async () => {
         method: "POST",
         body: { paths, host: "127.0.0.1" },
       });
-      await playRelayUrlList(r.urls || [], r.labels || items.map((it) => it.label));
+      await playRelayUrlList(r.urls || [], r.labels || items.map((it) => it.label), r.covers || []);
       setStatus($("lib-status"), "Playing.", "ok");
       setStatus(
         $("player-status"),
@@ -1423,6 +1571,7 @@ async function playHitUrlsInPlayer(urls, titles) {
 function shuffleInternalRelayTail() {
   const q = _internalRelayQueue;
   const t = _internalRelayTitles;
+  const c = _internalRelayCovers;
   const from = _internalRelayIdx + 1;
   if (from >= q.length) return;
   for (let i = q.length - 1; i > from; i--) {
@@ -1435,7 +1584,13 @@ function shuffleInternalRelayTail() {
       t[i] = t[j];
       t[j] = tv;
     }
+    if (c.length === q.length) {
+      const cv = c[i];
+      c[i] = c[j];
+      c[j] = cv;
+    }
   }
+  renderPlayerQueueList();
 }
 
 /**
@@ -1444,8 +1599,10 @@ function shuffleInternalRelayTail() {
 function unshuffleInternalRelayFromBase() {
   const base = _internalRelayQueueBase;
   const baseT = _internalRelayTitlesBase;
+  const baseC = _internalRelayCoversBase;
   const q = _internalRelayQueue;
   const t = _internalRelayTitles;
+  const c = _internalRelayCovers;
   const idx = _internalRelayIdx;
   if (!base.length || base.length !== q.length) {
     _internalRelayQueue = base.length ? [...base] : [...q];
@@ -1453,22 +1610,29 @@ function unshuffleInternalRelayFromBase() {
       baseT.length === _internalRelayQueue.length
         ? [...baseT]
         : normalizeRelayTitles(_internalRelayQueue, t);
+    _internalRelayCovers = baseC.length === _internalRelayQueue.length ? [...baseC] : [...c];
+    renderPlayerQueueList();
     return;
   }
   const playedHead = q.slice(0, idx + 1);
   const playedHeadT = t.slice(0, idx + 1);
+  const playedHeadC = c.slice(0, idx + 1);
   const playedSet = new Set(playedHead);
   const tail = [];
   const tailT = [];
+  const tailC = [];
   for (let i = 0; i < base.length; i++) {
     const u = base[i];
     if (!playedSet.has(u)) {
       tail.push(u);
       tailT.push(baseT[i] || t[base.indexOf(u)] || "");
+      tailC.push(baseC[i] ?? c[base.indexOf(u)] ?? null);
     }
   }
   _internalRelayQueue = playedHead.concat(tail);
   _internalRelayTitles = playedHeadT.concat(tailT);
+  _internalRelayCovers = playedHeadC.concat(tailC);
+  renderPlayerQueueList();
 }
 
 function syncInternalQueueControlButtons() {
@@ -1534,13 +1698,48 @@ async function primeInternalPlayerFromUserGesture() {
   }
 }
 
-function onInternalRelayTrackEnded() {
-  const el = $("v");
+function detachInternalPlayerErrorHook() {
+  const v = $("v");
+  const a = $("a");
+  if (_onInternalPlayerError) {
+    if (v) v.removeEventListener("error", _onInternalPlayerError);
+    if (a) a.removeEventListener("error", _onInternalPlayerError);
+    _onInternalPlayerError = null;
+  }
+}
+
+function attachInternalPlayerErrorHook() {
+  detachInternalPlayerErrorHook();
+  _onInternalPlayerError = () => onInternalPlayerMediaError();
+  const v = $("v");
+  const a = $("a");
+  if (v) v.addEventListener("error", _onInternalPlayerError);
+  if (a) a.addEventListener("error", _onInternalPlayerError);
+}
+
+function onInternalPlayerMediaError() {
+  const el = activeInternalMediaEl();
+  if (!el || !el.error) return;
+  const len = _internalRelayQueue.length;
+  const title = (_internalRelayTitles[_internalRelayIdx] || "").trim() || "Track";
+  if (len <= 1) {
+    setStatus($("player-status"), `Cannot play “${title}” (file may be corrupt or unsupported).`, "error");
+    return;
+  }
+  setStatus($("player-status"), `Skipping “${title}”…`, "");
+  advanceInternalRelayQueue(false);
+}
+
+/**
+ * @param {boolean} fromEnded — true when track finished normally (honours repeat-one).
+ */
+function advanceInternalRelayQueue(fromEnded) {
+  const el = activeInternalMediaEl();
   if (!el) return;
   const len = _internalRelayQueue.length;
   if (!len) return;
 
-  if (_internalRepeatCycle === 2) {
+  if (fromEnded && _internalRepeatCycle === 2) {
     el.currentTime = 0;
     ensurePlayerAudible(el);
     el.play()
@@ -1551,21 +1750,28 @@ function onInternalRelayTrackEnded() {
 
   let nextIdx = _internalRelayIdx + 1;
   if (nextIdx >= len) {
-    if (_internalRepeatCycle === 1) {
+    if (fromEnded && _internalRepeatCycle === 1) {
       nextIdx = 0;
     } else {
-      el.removeEventListener("ended", _onInternalPlayerEnded);
-      _onInternalPlayerEnded = null;
-      setStatus($("player-status"), len > 1 ? "Queue finished." : "Finished.", "ok");
+      if (_onInternalPlayerEnded) {
+        el.removeEventListener("ended", _onInternalPlayerEnded);
+        _onInternalPlayerEnded = null;
+      }
+      setStatus(
+        $("player-status"),
+        fromEnded ? (len > 1 ? "Queue finished." : "Finished.") : "Queue finished (skipped bad tracks).",
+        "ok"
+      );
       hideInternalPlayerPlaceholder();
       clearPlayerNowPlaying();
       updateInternalQueueControlsVisibility();
+      updatePlayerQueuePanelVisibility();
       return;
     }
   }
 
   _internalRelayIdx = nextIdx;
-  if (len === 1 && _internalRepeatCycle === 1) {
+  if (len === 1 && fromEnded && _internalRepeatCycle === 1) {
     el.currentTime = 0;
     ensurePlayerAudible(el);
     el.play()
@@ -1573,13 +1779,17 @@ function onInternalRelayTrackEnded() {
       .catch(() => {});
     return;
   }
+
   el.src = _internalRelayQueue[_internalRelayIdx];
   attachInternalPlayerHooks();
+  attachInternalPlayerErrorHook();
   ensurePlayerAudible(el);
   el.play()
     .then(() => ensurePlayerAudible(el))
-    .catch(() => {});
+    .catch(() => onInternalPlayerMediaError());
   updatePlayerNowPlaying();
+  renderPlayerQueueList();
+  syncPlayerNoCoverPlaceholder(el);
   setStatus(
     $("player-status"),
     len > 1 ? `Playing ${_internalRelayIdx + 1} of ${len}…` : "Playing.",
@@ -1587,64 +1797,93 @@ function onInternalRelayTrackEnded() {
   );
 }
 
+function onInternalRelayTrackEnded() {
+  advanceInternalRelayQueue(true);
+}
+
 /**
  * Play already-resolved relay HTTP URLs (local stream server).
  * @param {string[]} list
  * @param {string[]} [titles]
+ * @param {(string|null)[]} [covers]
  */
-async function playRelayUrlList(list, titles) {
+async function playRelayUrlList(list, titles, covers) {
   const clean = (list || []).map((u) => String(u).trim()).filter(Boolean);
   if (!clean.length) throw new Error("No stream URL");
   const labels = normalizeRelayTitles(clean, titles);
+  const coverList = Array.isArray(covers) ? covers : [];
+  const normalizedCovers = clean.map((_, i) => {
+    const c = coverList[i];
+    return c != null && String(c).trim() ? String(c).trim() : null;
+  });
 
   hideInternalPlayerPlaceholder();
   const v = $("v");
   const a = $("a");
   if (_onInternalPlayerEnded) {
     v.removeEventListener("ended", _onInternalPlayerEnded);
+    a.removeEventListener("ended", _onInternalPlayerEnded);
     _onInternalPlayerEnded = null;
   }
+  detachInternalPlayerErrorHook();
 
-  a.removeAttribute("src");
-  a.style.display = "none";
-  v.style.display = "block";
+  const useAudio = queueUsesAudioElement(clean);
+  const el = useAudio ? a : v;
+  const other = useAudio ? v : a;
+  other.removeAttribute("src");
+  try {
+    other.load();
+  } catch (_) {}
+  other.style.display = "none";
+  other.pause();
+  el.style.display = "block";
 
   _internalRelayQueueBase = [...clean];
   _internalRelayTitlesBase = [...labels];
+  _internalRelayCoversBase = [...normalizedCovers];
   _internalRelayQueue = [...clean];
   _internalRelayTitles = [...labels];
+  _internalRelayCovers = [...normalizedCovers];
   _internalRelayIdx = 0;
   _internalShuffleOn = false;
   _internalRepeatCycle = 0;
-  v.src = _internalRelayQueue[0];
-  v.load();
+  el.src = _internalRelayQueue[0];
+  el.load();
   attachInternalPlayerHooks();
+  attachInternalPlayerErrorHook();
   await new Promise((resolve) => {
-    if (v.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+    if (el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
       resolve();
       return;
     }
     const done = () => {
-      v.removeEventListener("canplay", done);
-      v.removeEventListener("error", done);
+      el.removeEventListener("canplay", done);
+      el.removeEventListener("error", done);
       resolve();
     };
-    v.addEventListener("canplay", done, { once: true });
-    v.addEventListener("error", done, { once: true });
+    el.addEventListener("canplay", done, { once: true });
+    el.addEventListener("error", done, { once: true });
     setTimeout(done, 12000);
   });
-  ensurePlayerAudible(v);
+  if (el.error) {
+    if (clean.length > 1) {
+      advanceInternalRelayQueue(false);
+      return;
+    }
+    throw new Error("Cannot play this track (stream or file may be corrupt).");
+  }
+  ensurePlayerAudible(el);
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
-      await v.play();
-      if (!v.paused) break;
+      await el.play();
+      if (!el.paused) break;
     } catch (_) {
       if (attempt === 2) {
         try {
-          v.muted = true;
-          await v.play();
-          ensurePlayerAudible(v);
-          if (!v.paused) break;
+          el.muted = true;
+          await el.play();
+          ensurePlayerAudible(el);
+          if (!el.paused) break;
         } catch (_2) {
           /* retry loop */
         }
@@ -1652,12 +1891,18 @@ async function playRelayUrlList(list, titles) {
       await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
     }
   }
-  ensurePlayerAudible(v);
+  ensurePlayerAudible(el);
+  if (el.error && clean.length > 1) {
+    advanceInternalRelayQueue(false);
+    return;
+  }
 
   _onInternalPlayerEnded = onInternalRelayTrackEnded;
-  v.addEventListener("ended", _onInternalPlayerEnded);
+  el.addEventListener("ended", _onInternalPlayerEnded);
   updatePlayerNowPlaying();
   updateInternalQueueControlsVisibility();
+  updatePlayerQueuePanelVisibility();
+  syncPlayerNoCoverPlaceholder(el);
 }
 
 /**
@@ -1686,7 +1931,8 @@ function selectedLibItems() {
     const p = cb.getAttribute("data-path");
     if (!p) return;
     const label = (tr.querySelector(".lib-label")?.textContent || "").trim();
-    out.push({ path: p, label });
+    const cover = (cb.getAttribute("data-cover") || "").trim() || null;
+    out.push({ path: p, label, cover_url: cover });
   });
   return out;
 }
@@ -1696,7 +1942,10 @@ function stopLocalInternalPlayback() {
   const v = $("v");
   const a = $("a");
   const hadQueue = _internalRelayQueue.length > 0;
-  const hadSrc = !!(v && (v.src || v.currentSrc));
+  const hadSrc = !!(
+    (v && (v.src || v.currentSrc)) ||
+    (a && (a.src || a.currentSrc))
+  );
   if (v) {
     if (_onInternalPlayerEnded) {
       v.removeEventListener("ended", _onInternalPlayerEnded);
@@ -1706,10 +1955,13 @@ function stopLocalInternalPlayback() {
     _internalRelayQueueBase = [];
     _internalRelayTitles = [];
     _internalRelayTitlesBase = [];
+    _internalRelayCovers = [];
+    _internalRelayCoversBase = [];
     _internalRelayIdx = 0;
     _internalShuffleOn = false;
     _internalRepeatCycle = 0;
     updateInternalQueueControlsVisibility();
+    updatePlayerQueuePanelVisibility();
     detachInternalPlayerHooks();
     try {
       v.pause();
@@ -1718,8 +1970,12 @@ function stopLocalInternalPlayback() {
     try {
       v.load();
     } catch (_) {}
+    v.style.display = "block";
   }
   if (a) {
+    if (_onInternalPlayerEnded) {
+      a.removeEventListener("ended", _onInternalPlayerEnded);
+    }
     try {
       a.pause();
     } catch (_) {}
@@ -1729,7 +1985,7 @@ function stopLocalInternalPlayback() {
     } catch (_) {}
     a.style.display = "none";
   }
-  if (v) v.style.display = "block";
+  detachInternalPlayerErrorHook();
   hideInternalPlayerPlaceholder();
   clearPlayerNowPlaying();
   if (hadQueue || hadSrc) {

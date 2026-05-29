@@ -1,13 +1,12 @@
-"""Library file listing for the web UI (shallow directory scan)."""
-
 from __future__ import annotations
 
 import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
-from dlpulse_next.media_paths import is_media_path
+from dlpulse_next.media_paths import find_cover_for_media, is_media_path
 
 
 def library_row_subtitle(st: os.stat_result) -> str:
@@ -122,5 +121,9 @@ def scan_library(
             abs_s = str(p.resolve())
         except OSError:
             abs_s = str(p)
-        out.append({"label": label[:200], "path": abs_s, "subtitle": sub})
+        row: dict[str, Any] = {"label": label[:200], "path": abs_s, "subtitle": sub}
+        cov = find_cover_for_media(p)
+        if cov is not None:
+            row["cover_url"] = f"/api/library/cover?path={quote(abs_s, safe='')}"
+        out.append(row)
     return out

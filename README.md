@@ -126,11 +126,44 @@ Newer builds run ffmpeg without a visible console and stop it when you close the
 
 ### Linux
 
-Install **from source** with your distro's GTK3, WebKit2GTK, and GStreamer. There is no Linux binary on [Releases](https://github.com/calvarr/DLPulse-next/releases) (Windows installer and macOS DMG only).
+There is **no Linux download** on [Releases](https://github.com/calvarr/DLPulse-next/releases) — only the Windows installer and macOS DMG. **AppImage is no longer shipped.**
+
+Two supported paths on Linux:
+
+| Method | Best for |
+|--------|----------|
+| **[Flatpak](#flatpak-recommended)** | Desktop use — sandboxed bundle (GTK/WebKit from GNOME runtime) |
+| **[From source](#from-source)** | Development, AUR/COPR packaging, or full control over system libs |
+
+Both need a working **GTK3 + WebKit2GTK** stack at runtime (Flatpak gets this from the GNOME runtime; from-source uses your distro packages).
+
+---
+
+#### Flatpak (recommended)
+
+Build and install locally from a git clone (not published on Flathub yet):
+
+```bash
+# One-time: Flatpak tools + GNOME runtime
+sudo pacman -S flatpak flatpak-builder   # Arch / Manjaro
+flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+flatpak install flathub org.gnome.Platform//49 org.gnome.Sdk//49
+
+git clone https://github.com/calvarr/DLPulse-next.git
+cd DLPulse-next
+bash packaging/flatpak/build.sh
+flatpak run com.github.calvarr.DLPulseNext
+```
+
+Details: [packaging/flatpak/README.md](packaging/flatpak/README.md)
+
+---
+
+#### From source
 
 **Requirements:** Python **3.11+**, pip, and the system packages below.
 
-#### 1. System dependencies
+##### 1. System dependencies
 
 Pick **one** block for your distribution.
 
@@ -205,7 +238,7 @@ python3 -c "import gi; gi.require_version('WebKit2','4.1'); from gi.repository i
 
 From a git checkout: `bash packaging/linux/check-deps.sh`
 
-#### 2. Install DLPulse Next
+##### 2. Install DLPulse Next
 
 ```bash
 git clone https://github.com/calvarr/DLPulse-next.git
@@ -216,7 +249,7 @@ pip install -U pip wheel
 pip install -e ".[webview-gtk]"
 ```
 
-#### 3. Run
+##### 3. Run
 
 ```bash
 dlpulse-next
@@ -242,18 +275,6 @@ update-desktop-database ~/.local/share/applications 2>/dev/null || true
 ```
 
 More detail: [packaging/linux/linux-dependencies.md](packaging/linux/linux-dependencies.md)
-
-#### Flatpak (optional)
-
-Experimental bundle — see [packaging/flatpak/README.md](packaging/flatpak/README.md).
-
-```bash
-flatpak install flathub org.gnome.Platform//49 org.gnome.Sdk//49
-git clone https://github.com/calvarr/DLPulse-next.git
-cd DLPulse-next
-bash packaging/flatpak/build.sh
-flatpak run com.github.calvarr.DLPulseNext
-```
 
 ---
 
@@ -285,7 +306,7 @@ pyinstaller packaging/pyinstaller/dlpulse_next.spec
 | Windows | `pwsh packaging/windows/build_installer.ps1` | `build/DLPulseNext-Setup.exe` |
 | macOS | `bash packaging/macos/make_dmg.sh` | `build/DLPulseNext-<arch>.dmg` (where `<arch>` is `x86_64` or `arm64`, auto-detected via `uname -m`; override with `DMG_ARCH=`) |
 
-CI builds the Windows installer and macOS DMG on push to `main` and on tags `v*`. Linux is not packaged in CI — use the [Linux install](#linux) steps above.
+CI builds the Windows installer and macOS DMG on push to `main` and on tags `v*`. **Linux** is not in CI — use [Flatpak](#flatpak-recommended) or [from source](#from-source).
 
 ## Project layout
 

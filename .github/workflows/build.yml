@@ -307,7 +307,7 @@ jobs:
             | macOS (Intel) | `DLPulseNext-x86_64.dmg` |
             | macOS (Apple Silicon) | `DLPulseNext-arm64.dmg` |
 
-            **Linux** — no pre-built binary; [install from source](https://github.com/calvarr/DLPulse-next#linux) (GTK3 + WebKit2GTK + GStreamer on your distro).
+            **Linux** — no pre-built binary on Releases. Build a [Flatpak](https://github.com/calvarr/DLPulse-next#flatpak-recommended) locally or [install from source](https://github.com/calvarr/DLPulse-next#from-source). AppImage is discontinued.
 
             For a **stable** versioned release, push a tag `v*` (e.g. `v2.0.1`).
           prerelease: true

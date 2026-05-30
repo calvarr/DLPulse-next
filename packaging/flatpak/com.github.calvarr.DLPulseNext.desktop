@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=DLPulse Next
+Comment=Media downloader with Chromecast
+Exec=dlpulse-next
+Icon=com.github.calvarr.DLPulseNext
+Terminal=false
+Categories=AudioVideo;Network;Video;
+StartupWMClass=DLPulse Next

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.github.calvarr.DLPulseNext</id>
+  <name>DLPulse Next</name>
+  <summary>Personal media library and downloader</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <developer_name>calvarr</developer_name>
+  <description>
+    <p>
+      DLPulse Next is a cross-platform desktop app for educational use and personal
+      media libraries. It wraps yt-dlp and ffmpeg to resolve supported public URLs,
+      manage a local archive, play media, and cast to Chromecast devices.
+    </p>
+    <p>
+      The native window uses GTK and WebKit2GTK. You are solely responsible for
+      complying with copyright laws and each platform&apos;s terms of service.
+    </p>
+  </description>
+  <launchable type="desktop-id">com.github.calvarr.DLPulseNext.desktop</launchable>
+  <url type="homepage">https://github.com/calvarr/DLPulse-next</url>
+  <url type="bugtracker">https://github.com/calvarr/DLPulse-next/issues</url>
+  <url type="vcs-browser">https://github.com/calvarr/DLPulse-next</url>
+  <content_rating type="oars-1.1"/>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Network</category>
+    <category>Video</category>
+  </categories>
+  <releases>
+    <release version="2.0.0" date="2026-05-30">
+      <description>
+        <p>Initial Flatpak packaging (install from source remains supported).</p>
+      </description>
+    </release>
+  </releases>
+</component>

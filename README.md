@@ -243,6 +243,18 @@ update-desktop-database ~/.local/share/applications 2>/dev/null || true
 
 More detail: [packaging/linux/linux-dependencies.md](packaging/linux/linux-dependencies.md)
 
+#### Flatpak (optional)
+
+Experimental bundle — see [packaging/flatpak/README.md](packaging/flatpak/README.md).
+
+```bash
+flatpak install flathub org.gnome.Platform//49 org.gnome.Sdk//49
+git clone https://github.com/calvarr/DLPulse-next.git
+cd DLPulse-next
+bash packaging/flatpak/build.sh
+flatpak run com.github.calvarr.DLPulseNext
+```
+
 ---
 
 ## Configuration

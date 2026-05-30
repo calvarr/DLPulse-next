@@ -18,9 +18,9 @@ Part of the [DLPulse](https://calvarr.github.io/) ecosystem. Desktop rebuild **w
 
 ## Install
 
-### Pre-built installers (Windows & macOS)
+### Pre-built installers (Windows & macOS only)
 
-Download from **[GitHub Releases](https://github.com/calvarr/DLPulse-next/releases)**.
+Download from **[GitHub Releases](https://github.com/calvarr/DLPulse-next/releases)**. On **Linux**, install [from source](#linux) (see below).
 
 | Channel | Link |
 |---------|------|
@@ -126,12 +126,9 @@ Newer builds run ffmpeg without a visible console and stop it when you close the
 
 ### Linux
 
-Two options — both need the same system packages (GTK3 + WebKit2GTK + GStreamer):
+Install **from source** with your distro's GTK3, WebKit2GTK, and GStreamer. There is no Linux binary on [Releases](https://github.com/calvarr/DLPulse-next/releases) (Windows installer and macOS DMG only).
 
-- **AppImage** (`DLPulseNext-x86_64.AppImage` from [Releases](https://github.com/calvarr/DLPulse-next/releases)) — `chmod +x` and run. Thin bundle: uses your distro's GTK/WebKit/GStreamer.
-- **From source** — `pip install -e ".[webview-gtk]"` then `python -m dlpulse_next` (best for development).
-
-**Requirements:** Python **3.11+** (only for the from-source path), pip, and the system packages below.
+**Requirements:** Python **3.11+**, pip, and the system packages below.
 
 #### 1. System dependencies
 
@@ -276,15 +273,7 @@ pyinstaller packaging/pyinstaller/dlpulse_next.spec
 | Windows | `pwsh packaging/windows/build_installer.ps1` | `build/DLPulseNext-Setup.exe` |
 | macOS | `bash packaging/macos/make_dmg.sh` | `build/DLPulseNext-<arch>.dmg` (where `<arch>` is `x86_64` or `arm64`, auto-detected via `uname -m`; override with `DMG_ARCH=`) |
 
-CI builds Windows installer, macOS DMG, and Linux AppImage on push to `main` and on tags `v*`.
-
-Build the Linux AppImage locally:
-
-```bash
-pyinstaller packaging/pyinstaller/dlpulse_next.spec
-bash packaging/linux/make_appimage.sh .
-# -> build/DLPulseNext-x86_64.AppImage
-```
+CI builds the Windows installer and macOS DMG on push to `main` and on tags `v*`. Linux is not packaged in CI — use the [Linux install](#linux) steps above.
 
 ## Project layout
 

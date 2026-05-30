@@ -1,4 +1,4 @@
-"""Linux AppImage / PyInstaller runtime helpers (system GTK/WebKit, optional GStreamer)."""
+"""Linux PyInstaller runtime helpers (system GTK/WebKit, optional GStreamer)."""
 from __future__ import annotations
 
 import os
@@ -10,7 +10,7 @@ import sys
 def is_linux_packaged() -> bool:
     if sys.platform != "linux":
         return False
-    return bool(getattr(sys, "frozen", False) or os.environ.get("APPIMAGE"))
+    return bool(getattr(sys, "frozen", False))
 
 
 def gstreamer_element_available(name: str) -> bool:

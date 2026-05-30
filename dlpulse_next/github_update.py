@@ -278,7 +278,8 @@ def check_app_github_update(timeout: float = 20.0) -> AppGitHubUpdateInfo:
         if latest_ver and installed_ver and is_newer_version(latest_ver, installed_ver):
             msg = (
                 f"A new version is available: {tag} (you have {installed_tag}). "
-                "Download Linux AppImage, Windows installer, or macOS DMG from GitHub Releases."
+                "Download the Windows installer or macOS DMG from GitHub Releases "
+                "(Linux: install from source — see README)."
             )
             return AppGitHubUpdateInfo(
                 True,
@@ -295,7 +296,7 @@ def check_app_github_update(timeout: float = 20.0) -> AppGitHubUpdateInfo:
         if not installed_ver and tag.startswith("v") and not release.get("prerelease"):
             msg = (
                 f"Stable release {tag} is available on GitHub Releases "
-                "(AppImage / Windows installer / macOS DMG)."
+                "(Windows installer / macOS DMG; Linux from source)."
             )
             return AppGitHubUpdateInfo(
                 True,

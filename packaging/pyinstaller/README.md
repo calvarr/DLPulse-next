@@ -4,7 +4,7 @@ After PyInstaller produces `dist/DLPulseNext/`:
 
 | Platform | Script | Output |
 |----------|--------|--------|
-| Linux | — | Install from source (see README); AppImage script is unmaintained |
+| Linux | — | Install from source (see README) |
 | Windows | `packaging/windows/build_installer.ps1` | `build/DLPulseNext-Setup.exe` (needs [NSIS](https://nsis.sourceforge.io/)) |
 | macOS | `packaging/macos/make_dmg.sh` | `build/DLPulseNext.dmg` |
 

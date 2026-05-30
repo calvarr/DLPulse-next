@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verify host packages for DLPulse Next AppImage (native window + playback).
+# Verify host packages for DLPulse Next (from-source install on Linux).
 set -euo pipefail
 
 ok=0
@@ -30,11 +30,16 @@ warn_if() {
   fi
 }
 
+check_webkit() {
+  python3 -c "import gi; gi.require_version('WebKit2','4.1'); from gi.repository import WebKit2" \
+    || python3 -c "import gi; gi.require_version('WebKit2','4.0'); from gi.repository import WebKit2"
+}
+
 echo "DLPulse Next — Linux dependency check"
 echo
 
 check "gtk3 + PyGObject" python3 -c "import gi; gi.require_version('Gtk','3.0'); from gi.repository import Gtk"
-check "WebKit2GTK typelib" python3 -c "import gi; gi.require_version('WebKit2','4.1'); from gi.repository import WebKit2"
+check "WebKit2GTK typelib (4.1 or 4.0)" check_webkit
 warn_if "GStreamer appsink" gst-inspect-1.0 appsink
 warn_if "GStreamer autoaudiosink" gst-inspect-1.0 autoaudiosink
 warn_if "mpv (external player)" command -v mpv
@@ -42,7 +47,7 @@ warn_if "mpv (external player)" command -v mpv
 echo
 echo "Summary: $ok ok, $warn optional missing, $fail required missing"
 if [ "$fail" -gt 0 ]; then
-  echo "Install packages listed in README.md (Linux — AppImage)."
+  echo "Install packages listed in README.md (Linux)."
   exit 1
 fi
 if [ "$warn" -gt 0 ]; then

@@ -6,9 +6,8 @@ import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 
-# In the self-contained AppImage, AppRun exports the EXACT WebKit/Soup versions
-# that were bundled (DLPULSE_WEBKIT_VER / DLPULSE_SOUP_VER). Pin them so that
-# gobject-introspection uses the bundled typelib instead of falling through to a
+# Optional DLPULSE_WEBKIT_VER / DLPULSE_SOUP_VER (launcher) pin WebKit/Soup so
+# gobject-introspection uses the expected typelib instead of falling through to a
 # different host typelib — e.g. requesting 4.1 first on a host that has 4.1 would
 # dlopen the host libwebkit2gtk-4.1 and drag in mismatched host libs (libicu/
 # libstdc++ CXXABI clash).
@@ -29,8 +28,8 @@ else:
         gi.require_version("WebKit2", "4.0")
         gi.require_version("Soup", "2.4")
 
-# PyInstaller/AppImage: WebKit subprocess sandbox cannot see host GStreamer plugins.
-if os.environ.get("_MEIPASS") or os.environ.get("APPIMAGE"):
+# PyInstaller: WebKit subprocess sandbox cannot see host GStreamer plugins.
+if os.environ.get("_MEIPASS"):
     os.environ["WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS"] = "1"
 
 from gi.repository import WebKit2  # noqa: E402

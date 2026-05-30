@@ -1,10 +1,8 @@
 # WebKit media uses GStreamer. PyInstaller's _internal must not be scanned as plugins.
 # Runs after PyInstaller sets LD_LIBRARY_PATH — reorder so host GLib/GStreamer win.
 #
-# Exception: in the SELF-CONTAINED AppImage (AppRun sets DLPULSE_SELFCONTAINED=1)
-# the whole GTK/WebKit/GStreamer stack is bundled and AppRun has already pointed
-# every variable at the bundle. Reordering toward host /usr/lib would load host
-# libraries instead and defeat self-containment, so we leave AppRun's env alone.
+# When DLPULSE_SELFCONTAINED=1 and APPDIR is set, a launcher already pointed
+# env vars at a bundled stack — do not reorder LD_LIBRARY_PATH toward the host.
 import os
 
 _MEIPASS = os.environ.get("_MEIPASS", "")

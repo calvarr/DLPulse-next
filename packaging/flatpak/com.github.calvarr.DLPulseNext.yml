@@ -31,21 +31,26 @@ modules:
     config-opts:
       - --disable-static
       - --without-applet
-      - --with-libcares
+      - --without-libcares
       - --with-gnutls
     sources:
       - type: archive
         url: https://github.com/aria2/aria2/releases/download/release-1.37.0/aria2-1.37.0.tar.xz
-        sha256: 90349a13b32a3f92cb63a6371879d9fc64e0e395b2a337b8e8c64c6b43576668
+        sha256: 60a420ad7085eb616cb6e2bdf0a7206d68ff3d37fb5a956dc44242eb2f79b66b
 
   - name: dlpulse-next
     buildsystem: simple
+    build-options:
+      build-args:
+        - --share=network
     build-commands:
-      - pip3 install --prefix=${FLATPAK_DEST} --no-build-isolation ".[webview-gtk]"
+      # PyGObject comes from org.gnome.Sdk; do not pip-install webview-gtk extra.
+      - pip3 install --prefix=${FLATPAK_DEST} --no-build-isolation .
       - |
         for size in 128 256 512; do
-          rsvg-convert -w "${size}" -h "${size}" dlpulse_next/static/dlpulse_icon.svg \
-            -o "${FLATPAK_DEST}/share/icons/hicolor/${size}x${size}/apps/com.github.calvarr.DLPulseNext.png"
+          out="${FLATPAK_DEST}/share/icons/hicolor/${size}x${size}/apps/com.github.calvarr.DLPulseNext.png"
+          mkdir -p "$(dirname "$out")"
+          rsvg-convert -w "${size}" -h "${size}" dlpulse_next/static/dlpulse_icon.svg -o "$out"
         done
       - install -Dm644 packaging/flatpak/com.github.calvarr.DLPulseNext.desktop
           ${FLATPAK_DEST}/share/applications/com.github.calvarr.DLPulseNext.desktop

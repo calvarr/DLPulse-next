@@ -971,7 +971,7 @@ async function loadSettingsUi() {
   if ($("set-aria2-x")) $("set-aria2-x").value = String(s.aria2c_connections ?? 16);
   const hint = $("set-aria2-hint");
   if (hint) {
-    if s.aria2c_bundled || s.flatpak) {
+    if (s.aria2c_bundled || s.flatpak) {
       hint.textContent = s.flatpak
         ? "aria2c is bundled in this Flatpak."
         : "aria2c is bundled with this build.";

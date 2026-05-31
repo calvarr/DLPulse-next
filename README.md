@@ -95,15 +95,15 @@ Newer builds run ffmpeg without a visible console and stop it when you close the
    3. Scroll down to the **Security** section. You will see a line like: *"DLPulseNext was blocked from use because it is not from an identified developer."* Click **Open Anyway** next to it. (You may need to enter your password.)
    4. Try to open the app again — confirm in the new dialog that appears.
 
-   **Method C — Strip the quarantine attribute via Terminal (advanced)**
+   **Method C — Remove quarantine via Terminal (recommended if blocked or “damaged”)**
 
-   When macOS quarantines an app, it sets the `com.apple.quarantine` extended attribute on it. Removing it makes macOS treat the app as if it were not downloaded from the internet:
+   After copying the app to Applications, run (enter your password when prompted):
 
    ```bash
-   xattr -dr com.apple.quarantine /Applications/DLPulseNext.app
+   sudo xattr -r -d com.apple.quarantine "/Applications/DLPulseNext.app" 2>/dev/null
    ```
 
-   After this, double‑click works normally without any Gatekeeper prompt.
+   This clears the download quarantine flag macOS sets on files from the internet. After this, double‑click works normally without Gatekeeper prompts.
 
 5. **Avoid quarantine altogether (optional).** If you frequently work with unsigned tools, you can prevent macOS from setting the quarantine attribute on files downloaded with Safari:
 
@@ -118,7 +118,7 @@ Newer builds run ffmpeg without a visible console and stop it when you close the
 | Error | Fix |
 |---|---|
 | *"not compatible with this Mac"* | Wrong architecture — re‑download the DMG matching `uname -m`. |
-| *"is damaged and can't be opened. You should move it to the Trash"* | The quarantine bit is set and the ad-hoc signature is being rejected. Run `xattr -dr com.apple.quarantine /Applications/DLPulseNext.app` (Method C above), then try again. |
+| *"is damaged and can't be opened. You should move it to the Trash"* | Quarantine + ad-hoc signature rejected. Run `sudo xattr -r -d com.apple.quarantine "/Applications/DLPulseNext.app" 2>/dev/null` (Method C), then open again. |
 | *"can't be opened because Apple cannot check it for malicious software"* | Use Method A or B above. |
 | App opens but immediately crashes / no window appears | Check Console.app → search for `DLPulseNext`. The Flask UI also serves on a local port; if you see "Server listening on 127.0.0.1:PORT" in logs, open `http://127.0.0.1:PORT` in your browser. |
 

@@ -573,8 +573,10 @@ def run_download(
     base_opts.update(opts_extra)
     # YouTube has no true lossless/native audio tracks; for those presets force MP3 extraction
     # so fallback to progressive "best" doesn't leave users with a video file.
+    # Do not apply to video presets — index 0 also sets format_sort for native best video.
     if (
         _url_is_youtube(url)
+        and not is_video_preset
         and "format_sort" in opts_extra
         and not base_opts.get("postprocessors")
     ):

@@ -32,7 +32,7 @@ jobs:
             arch: x64
             artifact_name: dlpulse-next-windows
             artifact_file: build/DLPulseNext-Setup.exe
-          - os: macos-13
+          - os: macos-15-intel
             target: macos
             arch: x86_64
             macos_deployment_target: "10.13"

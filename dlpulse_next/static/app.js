@@ -971,8 +971,10 @@ async function loadSettingsUi() {
   if ($("set-aria2-x")) $("set-aria2-x").value = String(s.aria2c_connections ?? 16);
   const hint = $("set-aria2-hint");
   if (hint) {
-    if (s.aria2c_bundled) {
-      hint.textContent = "aria2c is bundled with this build.";
+    if s.aria2c_bundled || s.flatpak) {
+      hint.textContent = s.flatpak
+        ? "aria2c is bundled in this Flatpak."
+        : "aria2c is bundled with this build.";
     } else if (s.aria2c_available) {
       hint.textContent = "aria2c found on PATH (system install).";
     } else {
@@ -1034,7 +1036,7 @@ function applyVersionPanel(v) {
   if (bundledEl && v.bundled) {
     const parts = [];
     if (v.bundled.ffmpeg) parts.push("ffmpeg bundled");
-    if (v.bundled.aria2c_bundled) parts.push("aria2c bundled");
+    if (v.bundled.aria2c_bundled || v.bundled.flatpak) parts.push("aria2c bundled");
     else if (v.bundled.aria2c) parts.push("aria2c (system)");
     if (v.bundled.ytdlp) parts.push(`yt-dlp ${v.bundled.ytdlp}`);
     bundledEl.textContent = parts.length ? parts.join(" · ") : "";

@@ -25,6 +25,7 @@ finish-args:
   - --filesystem=xdg-config/dlpulse-next:create
   - --talk-name=org.freedesktop.Flatpak
   - --env=PYTHONSAFEPATH=1
+  - --env=DLPULSE_ARIA2C=/app/bin/aria2c
 
 modules:
   - name: aria2

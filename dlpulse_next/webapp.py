@@ -103,7 +103,7 @@ from dlpulse_next.file_browser import (
     mkdir as fs_mkdir,
     rename_item as fs_rename,
 )
-from dlpulse_next.ffmpeg_tools import aria2c_available, aria2c_is_bundled, ffmpeg_available
+from dlpulse_next.ffmpeg_tools import aria2c_available, aria2c_is_bundled, ffmpeg_available, is_flatpak
 from dlpulse_next.native_dialogs import pick_folder_dialog
 from dlpulse_next.search_logic import preset_requires_ffmpeg_conversion, resolve_search_or_url
 
@@ -583,6 +583,7 @@ def create_app() -> Flask:
                     "ffmpeg": ffmpeg_available(),
                     "aria2c": aria2c_available(),
                     "aria2c_bundled": aria2c_is_bundled(),
+                    "flatpak": is_flatpak(),
                     "ytdlp": get_installed_ytdlp_version(),
                 },
             }
@@ -611,6 +612,7 @@ def create_app() -> Flask:
             "aria2c_connections": get_aria2c_connections(),
             "aria2c_available": aria2c_available(),
             "aria2c_bundled": aria2c_is_bundled(),
+            "flatpak": is_flatpak(),
             "download_rate_limit_mbps": get_download_rate_limit_mbps(),
         }
         if sys.platform == "linux":

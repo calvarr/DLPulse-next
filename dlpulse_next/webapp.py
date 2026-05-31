@@ -161,7 +161,11 @@ def _donate_qr_svg_bytes(payload: str) -> bytes:
     )
     qr.add_data(payload)
     qr.make(fit=True)
-    img = qr.make_image(image_factory=qrcode.image.svg.SvgPathImage)
+    img = qr.make_image(
+        image_factory=qrcode.image.svg.SvgPathImage,
+        fill_color="black",
+        back_color="white",
+    )
     img.save(buf)
     return buf.getvalue()
 

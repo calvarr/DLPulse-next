@@ -1156,9 +1156,10 @@ th {
   display: inline-block;
   padding: 12px;
   border-radius: 14px;
-  background: var(--panel);
-  border: 1px solid var(--border-strong);
-  box-shadow: var(--shadow-md), var(--shadow-inset);
+  /* QR codes must stay high-contrast (black on white) in dark and light UI */
+  background: #ffffff;
+  border: 1px solid color-mix(in srgb, var(--border-strong) 55%, #ffffff);
+  box-shadow: var(--shadow-md);
 }
 
 .donate-qr-wrap img {
@@ -1166,6 +1167,8 @@ th {
   border-radius: 10px;
   max-width: 100%;
   height: auto;
+  background: #ffffff;
+  filter: none;
 }
 
 .banner {

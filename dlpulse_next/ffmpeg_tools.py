@@ -29,7 +29,7 @@ def _candidate_dirs() -> list[Path]:
             dirs.append(p)
 
     # Flatpak: aria2c/ffmpeg live under /app/bin (not next to sys.executable).
-    if os.environ.get("FLATPACK_ID") or Path("/app/bin").is_dir():
+    if os.environ.get("FLATPAK_ID") or Path("/app/bin").is_dir():
         add(Path("/app/bin"))
 
     for env_name in ("DLPULSE_FFMPEG_DIR", "FFMPEG_DIR"):
@@ -154,7 +154,7 @@ def find_aria2c() -> str | None:
 
 
 def is_flatpak() -> bool:
-    return bool(os.environ.get("FLATPACK_ID"))
+    return bool(os.environ.get("FLATPAK_ID"))
 
 
 def aria2c_available() -> bool:
@@ -171,7 +171,7 @@ def aria2c_is_bundled() -> bool:
     except OSError:
         return False
     # Flatpak install prefix.
-    if os.environ.get("FLATPACK_ID") and str(resolved).startswith("/app/"):
+    if os.environ.get("FLATPAK_ID") and str(resolved).startswith("/app/"):
         return True
     for directory in _candidate_dirs():
         try:
